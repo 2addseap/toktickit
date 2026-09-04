@@ -19,6 +19,39 @@ export interface RelatedSystem {
   category?: string | null;
 }
 
+export interface Attachment {
+  id: number;
+  ticketId: number;
+  fileName: string;
+  storedPath: string;
+  fileSize: number;
+  mimeType: string;
+  isRemoved: boolean;
+  removalReason?: string | null;
+  removedAt?: string | null;
+  removedBy?: string | null;
+  createdAt: string;
+}
+
+export interface Ticket {
+  id: number;
+  ticketNumber: string;
+  requesterId: number;
+  requester?: RequesterUser;
+  categoryId: number;
+  category?: Category;
+  relatedSystemId: number;
+  relatedSystem?: RelatedSystem;
+  summary: string;
+  description: string;
+  requestedPriority: string;
+  itPriority?: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  attachments?: Attachment[];
+}
+
 export interface SystemStatus {
   online: boolean;
   categories: Category[];
@@ -61,4 +94,28 @@ export async function getRelatedSystems(): Promise<RelatedSystem[]> {
     throw new Error("Failed to load related systems");
   }
   return res.json();
+}
+
+export async function createTicket(
+  formData: FormData,
+  requesterId: number
+): Promise<Ticket> {
+  const res = await fetch(`${API_URL}/api/tickets`, {
+    method: "POST",
+    headers: {
+      "x-requester-id": String(requesterId),
+    },
+    body: formData,
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const error = new Error(data.message || "Failed to create ticket") as Error & {
+      fieldErrors?: Record<string, string>;
+    };
+    error.fieldErrors = data.fieldErrors;
+    throw error;
+  }
+
+  return data;
 }
