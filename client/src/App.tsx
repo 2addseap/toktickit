@@ -2,10 +2,11 @@ import { useState } from "react";
 import { RequesterProvider, useRequester } from "./context/RequesterContext.js";
 import Navbar from "./components/Navbar.js";
 import RequesterSelect from "./components/RequesterSelect.js";
+import CreateTicket from "./components/CreateTicket.js";
 
 function MainContent() {
   const { currentRequester, isSelectorOpen } = useRequester();
-  const [currentTab, setCurrentTab] = useState<"my-tickets" | "create-ticket">("my-tickets");
+  const [currentTab, setCurrentTab] = useState<"my-tickets" | "create-ticket">("create-ticket");
 
   if (!currentRequester || isSelectorOpen) {
     return <RequesterSelect />;
@@ -34,21 +35,18 @@ function MainContent() {
               </button>
             </div>
             <div className="p-4 text-center text-muted bg-light rounded border">
-              📋 My Tickets view will be fully implemented in Issue 4.
+              📋 My Tickets search, filter, and pagination view will be fully implemented in Issue 4.
             </div>
           </div>
         )}
 
         {currentTab === "create-ticket" && (
-          <div className="zen-card p-4" style={{ maxWidth: 840 }}>
-            <h1 className="h3 fw-bold mb-3">Create New Support Ticket</h1>
-            <p className="text-muted small mb-4">
-              Submit a support request on behalf of <strong>{currentRequester.name}</strong>.
-            </p>
-            <div className="p-4 text-center text-muted bg-light rounded border">
-              ✍️ Create Ticket form will be fully implemented in Issue 3.
-            </div>
-          </div>
+          <CreateTicket
+            onSuccess={() => {
+              // Stay on confirmation screen or allow navigating to my-tickets
+            }}
+            onCancel={() => setCurrentTab("my-tickets")}
+          />
         )}
       </main>
     </div>
