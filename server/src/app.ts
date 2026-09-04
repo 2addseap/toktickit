@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import multer from "multer";
+import { Prisma } from "@prisma/client";
 import { getPrisma } from "./prisma.js";
 import { upload, generateTicketNumber } from "./upload.js";
 
@@ -179,9 +180,6 @@ app.post("/api/tickets", handleUpload, async (req: Request, res: Response) => {
       });
     }
 
-    // Generate unique Ticket Number
-    const ticketNumber = await generateTicketNumber(prisma);
-
     // Process attachments
     const files = (req.files as Express.Multer.File[]) || [];
     const attachmentsData = files.map((file) => ({
@@ -192,33 +190,162 @@ app.post("/api/tickets", handleUpload, async (req: Request, res: Response) => {
       isRemoved: false,
     }));
 
-    // Create Ticket in DB
-    const newTicket = await prisma.ticket.create({
-      data: {
-        ticketNumber,
-        requesterId,
-        categoryId: Number(categoryId),
-        relatedSystemId: Number(relatedSystemId),
-        requestedPriority: priority,
-        summary: trimmedSummary,
-        description: trimmedDescription,
-        status: "New",
-        attachments: {
-          create: attachmentsData,
-        },
-      },
-      include: {
-        requester: { select: { id: true, name: true, email: true, department: true } },
-        category: { select: { id: true, name: true } },
-        relatedSystem: { select: { id: true, name: true } },
-        attachments: true,
-      },
-    });
+    // Generate unique Ticket Number & create with retry
+    let newTicket;
+    let attempts = 0;
+    while (attempts < 5) {
+      try {
+        const ticketNumber = await generateTicketNumber(prisma);
+        newTicket = await prisma.ticket.create({
+          data: {
+            ticketNumber,
+            requesterId,
+            categoryId: Number(categoryId),
+            relatedSystemId: Number(relatedSystemId),
+            requestedPriority: priority,
+            summary: trimmedSummary,
+            description: trimmedDescription,
+            status: "New",
+            attachments: {
+              create: attachmentsData,
+            },
+          },
+          include: {
+            requester: { select: { id: true, name: true, email: true, department: true } },
+            category: { select: { id: true, name: true } },
+            relatedSystem: { select: { id: true, name: true } },
+            attachments: true,
+          },
+        });
+        break;
+      } catch (err: unknown) {
+        if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "P2002") {
+          attempts++;
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    if (!newTicket) {
+      return res.status(500).json({ error: "Failed to allocate unique ticket number." });
+    }
 
     res.status(201).json(newTicket);
   } catch (err) {
     console.error("Failed to create ticket:", err);
     res.status(500).json({ error: "Failed to create support ticket." });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Lab 2 — Issue 4: My Tickets List Endpoint (Search, Filter, Sort, Pagination)
+// ---------------------------------------------------------------------------
+
+const ALLOWED_SORT_FIELDS = ["createdAt", "ticketNumber", "requestedPriority", "updatedAt"];
+
+app.get("/api/tickets", async (req: Request, res: Response) => {
+  try {
+    const prisma = getPrisma();
+    const rawRequesterId = req.headers["x-requester-id"] ?? req.query.requesterId;
+    const requesterId = Number(rawRequesterId);
+
+    if (!requesterId || isNaN(requesterId)) {
+      return res.status(400).json({
+        error: "Requester Context Required",
+        message: "A valid x-requester-id header or requesterId query param is required.",
+      });
+    }
+
+    // Query parameters
+    const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+    const categoryId = req.query.categoryId ? Number(req.query.categoryId) : undefined;
+    const priority = typeof req.query.priority === "string" ? req.query.priority.toUpperCase() : undefined;
+    const status = typeof req.query.status === "string" ? req.query.status : undefined;
+
+    const sortBy = typeof req.query.sortBy === "string" && ALLOWED_SORT_FIELDS.includes(req.query.sortBy)
+      ? req.query.sortBy
+      : "createdAt";
+    const sortOrder = req.query.sortOrder === "asc" ? "asc" : "desc";
+
+    const page = Math.max(1, req.query.page ? Number(req.query.page) : 1);
+    const pageSize = Math.min(50, Math.max(1, req.query.pageSize ? Number(req.query.pageSize) : 10));
+
+    // Construct Prisma where clause strictly enforcing requester ownership
+    const where: Prisma.TicketWhereInput = {
+      requesterId,
+    };
+
+    if (categoryId && !isNaN(categoryId)) {
+      where.categoryId = categoryId;
+    }
+
+    if (priority && ALLOWED_PRIORITIES.includes(priority)) {
+      where.requestedPriority = priority;
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (search) {
+      where.OR = [
+        { ticketNumber: { contains: search, mode: "insensitive" } },
+        { summary: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    // Total matching count
+    const totalItems = await prisma.ticket.count({ where });
+
+    // Paginated fetch
+    const tickets = await prisma.ticket.findMany({
+      where,
+      orderBy: { [sortBy]: sortOrder },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: {
+        category: { select: { id: true, name: true } },
+        relatedSystem: { select: { id: true, name: true } },
+        _count: {
+          select: {
+            attachments: { where: { isRemoved: false } },
+          },
+        },
+      },
+    });
+
+    const data = tickets.map((t) => ({
+      id: t.id,
+      ticketNumber: t.ticketNumber,
+      summary: t.summary,
+      description: t.description,
+      requestedPriority: t.requestedPriority,
+      itPriority: t.itPriority,
+      status: t.status,
+      createdAt: t.createdAt,
+      updatedAt: t.updatedAt,
+      category: t.category,
+      relatedSystem: t.relatedSystem,
+      attachmentCount: t._count.attachments,
+    }));
+
+    const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+    res.status(200).json({
+      data,
+      pagination: {
+        page,
+        pageSize,
+        totalItems,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
+  } catch (err) {
+    console.error("Failed to fetch tickets:", err);
+    res.status(500).json({ error: "Failed to retrieve tickets." });
   }
 });
 

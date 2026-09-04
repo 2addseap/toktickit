@@ -59,27 +59,30 @@ export async function generateTicketNumber(prisma: PrismaClient): Promise<string
   const currentYear = new Date().getFullYear();
   const yearPrefix = `TKT-${currentYear}-`;
 
-  // Count tickets created in the current year
-  const count = await prisma.ticket.count({
-    where: {
-      ticketNumber: {
-        startsWith: yearPrefix,
-      },
-    },
+  const lastTicket = await prisma.ticket.findFirst({
+    where: { ticketNumber: { startsWith: yearPrefix } },
+    orderBy: { id: "desc" },
+    select: { ticketNumber: true },
   });
 
-  const nextSeq = String(count + 1).padStart(6, "0");
-  let ticketNumber = `${yearPrefix}${nextSeq}`;
-
-  // Double check uniqueness
-  let exists = await prisma.ticket.findUnique({ where: { ticketNumber } });
-  let offset = 1;
-  while (exists) {
-    const fallbackSeq = String(count + 1 + offset).padStart(6, "0");
-    ticketNumber = `${yearPrefix}${fallbackSeq}`;
-    exists = await prisma.ticket.findUnique({ where: { ticketNumber } });
-    offset++;
+  let maxSeq = 0;
+  if (lastTicket) {
+    const parts = lastTicket.ticketNumber.split("-");
+    const num = parseInt(parts[2], 10);
+    if (!isNaN(num)) maxSeq = num;
   }
 
-  return ticketNumber;
+  const totalCount = await prisma.ticket.count({
+    where: { ticketNumber: { startsWith: yearPrefix } },
+  });
+
+  let seq = Math.max(maxSeq, totalCount) + 1;
+  let candidate = `${yearPrefix}${String(seq).padStart(6, "0")}`;
+
+  while (await prisma.ticket.findUnique({ where: { ticketNumber: candidate } })) {
+    seq++;
+    candidate = `${yearPrefix}${String(seq).padStart(6, "0")}`;
+  }
+
+  return candidate;
 }
