@@ -50,6 +50,32 @@ export interface Ticket {
   createdAt: string;
   updatedAt: string;
   attachments?: Attachment[];
+  attachmentCount?: number;
+}
+
+export interface PaginationMetadata {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+export interface PaginatedTickets {
+  data: Ticket[];
+  pagination: PaginationMetadata;
+}
+
+export interface TicketQueryParams {
+  search?: string;
+  categoryId?: number | string;
+  priority?: string;
+  status?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  page?: number;
+  pageSize?: number;
 }
 
 export interface SystemStatus {
@@ -118,4 +144,31 @@ export async function createTicket(
   }
 
   return data;
+}
+
+export async function getTickets(
+  params: TicketQueryParams,
+  requesterId: number
+): Promise<PaginatedTickets> {
+  const url = new URL(`${API_URL}/api/tickets`);
+  if (params.search) url.searchParams.set("search", params.search);
+  if (params.categoryId) url.searchParams.set("categoryId", String(params.categoryId));
+  if (params.priority) url.searchParams.set("priority", params.priority);
+  if (params.status) url.searchParams.set("status", params.status);
+  if (params.sortBy) url.searchParams.set("sortBy", params.sortBy);
+  if (params.sortOrder) url.searchParams.set("sortOrder", params.sortOrder);
+  if (params.page) url.searchParams.set("page", String(params.page));
+  if (params.pageSize) url.searchParams.set("pageSize", String(params.pageSize));
+
+  const res = await fetch(url.toString(), {
+    headers: {
+      "x-requester-id": String(requesterId),
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch tickets");
+  }
+
+  return res.json();
 }
