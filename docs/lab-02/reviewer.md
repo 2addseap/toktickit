@@ -6,12 +6,12 @@
 ## Pull Requests I authored (reviewed by my partner)
 | PR | Branch | Reviewer verdict |
 |----|--------|------------------|
-| #18 | feature/1-spec-and-test-plan | Approved & Merged |
-| #20 | feature/2-requester-context | Approved & Merged |
-| #21 | feature/3-create-ticket | Approved & Merged |
-| #22 | feature/4-my-tickets | Approved & Merged |
-| #23 | feature/5-ticket-detail | Approved & Merged |
-| #24 | feature/6-visual-responsive-release | Approved & Merged |
+| [#18](https://github.com/2addseap/toktickit/pull/18) | feature/1-spec-and-test-plan | Approved & Merged |
+| [#20](https://github.com/2addseap/toktickit/pull/20) | feature/2-requester-context | Approved & Merged |
+| [#21](https://github.com/2addseap/toktickit/pull/21) | feature/3-create-ticket | Approved & Merged |
+| [#22](https://github.com/2addseap/toktickit/pull/22) | feature/4-my-tickets | Approved & Merged |
+| [#23](https://github.com/2addseap/toktickit/pull/23) | feature/5-ticket-detail | Approved & Merged |
+| [#24](https://github.com/2addseap/toktickit/pull/24) | feature/6-visual-responsive-release | Approved & Merged |
 
 **Reviewer comment I received:**
 • Issue 1: "Specification covers all 13 FRs, 15 BRs, and 18 ACs with clear Zen Green color palette tokens and REST API contracts."
