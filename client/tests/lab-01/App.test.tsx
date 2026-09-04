@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import App from "../../src/App.js";
+import Lab01App from "../../src/components/Lab01App.js";
 import * as api from "../../src/api.js";
 
 describe("App", () => {
   it("renders the TokTickIT heading", () => {
-    render(<App />);
+    render(<Lab01App />);
     expect(screen.getByText(/TokTickIT/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Check System/i })).toBeInTheDocument();
   });
@@ -24,7 +24,7 @@ describe("App", () => {
       categories: mockCategories,
     });
 
-    render(<App />);
+    render(<Lab01App />);
     const button = screen.getByRole("button", { name: /Check System/i });
     await userEvent.click(button);
 
@@ -43,7 +43,7 @@ describe("App", () => {
       new Error("Unable to connect to TokTickIT API")
     );
 
-    render(<App />);
+    render(<Lab01App />);
     const button = screen.getByRole("button", { name: /Check System/i });
     await userEvent.click(button);
 
