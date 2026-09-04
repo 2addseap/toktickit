@@ -12,6 +12,8 @@ node_modules/
 dist/
 build/
 .vite/
+uploads/
+server/uploads/
 
 # Logs
 npm-debug.log*

@@ -1,75 +1,69 @@
-import { useState } from "react";
-import { checkSystem, Category } from "./api.js";
+import { useState, useEffect } from "react";
+import { RequesterProvider, useRequester } from "./context/RequesterContext.js";
+import Navbar from "./components/Navbar.js";
+import RequesterSelect from "./components/RequesterSelect.js";
+import CreateTicket from "./components/CreateTicket.js";
+import MyTickets from "./components/MyTickets.js";
+import TicketDetail from "./components/TicketDetail.js";
 
-// UI states you must handle for Issue 4: idle, loading, success, error.
-type UiState = "idle" | "loading" | "success" | "error";
+function MainContent() {
+  const { currentRequester, isSelectorOpen } = useRequester();
+  const [currentTab, setCurrentTab] = useState<"my-tickets" | "create-ticket">("my-tickets");
+  const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
 
-export default function App() {
-  const [state, setState] = useState<UiState>("idle");
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [errorMessage, setErrorMessage] = useState<string>("");
+  // Reset selected ticket if requester changes
+  useEffect(() => {
+    setSelectedTicketId(null);
+  }, [currentRequester?.id]);
 
-  async function handleCheck() {
-    setState("loading");
-    setErrorMessage("");
-    try {
-      const result = await checkSystem();
-      setCategories(result.categories);
-      setState("success");
-    } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : "Unable to connect to TokTickIT API");
-      setState("error");
-    }
+  if (!currentRequester || isSelectorOpen) {
+    return <RequesterSelect />;
   }
 
   return (
-    <div className="container py-5" style={{ maxWidth: 640 }}>
-      <h1 className="h3 mb-4">
-        TokTickIT <span className="text-success">IT Service Desk</span>
-      </h1>
+    <div>
+      <Navbar
+        currentTab={currentTab}
+        onTabChange={(tab) => {
+          setSelectedTicketId(null);
+          setCurrentTab(tab);
+        }}
+      />
 
-      <button
-        className="btn btn-success mb-4"
-        onClick={handleCheck}
-        disabled={state === "loading"}
-      >
-        {state === "loading" ? "Loading…" : "Check System"}
-      </button>
+      <main className="container py-4">
+        {selectedTicketId ? (
+          <TicketDetail
+            ticketId={selectedTicketId}
+            onBack={() => setSelectedTicketId(null)}
+          />
+        ) : (
+          <>
+            {currentTab === "my-tickets" && (
+              <MyTickets
+                onCreateTicket={() => setCurrentTab("create-ticket")}
+                onSelectTicket={(ticketId) => setSelectedTicketId(ticketId)}
+              />
+            )}
 
-      {state === "loading" && (
-        <div className="text-muted" role="status">
-          ⏳ Loading…
-        </div>
-      )}
-
-      {state === "success" && (
-        <div className="mt-3">
-          <p className="fw-semibold mb-3">
-            System Status: <span className="text-success">Online</span>
-          </p>
-          {categories.length > 0 && (
-            <div>
-              <h2 className="h6 fw-bold">Supported Request Categories:</h2>
-              <ol className="list-group list-group-numbered">
-                {categories.map((cat) => (
-                  <li key={cat.id} className="list-group-item">
-                    {cat.name}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-        </div>
-      )}
-
-      {state === "error" && (
-        <div className="mt-3">
-          <p className="fw-semibold text-danger mb-1">
-            System Status: <span>Offline</span>
-          </p>
-          <p className="text-danger">{errorMessage || "Unable to connect to TokTickIT API"}</p>
-        </div>
-      )}
+            {currentTab === "create-ticket" && (
+              <CreateTicket
+                onSuccess={() => {
+                  // Stay on confirmation screen or allow navigating to my-tickets
+                }}
+                onCancel={() => setCurrentTab("my-tickets")}
+              />
+            )}
+          </>
+        )}
+      </main>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <RequesterProvider>
+      <MainContent />
+    </RequesterProvider>
   );
 }

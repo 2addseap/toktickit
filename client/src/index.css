@@ -1,0 +1,243 @@
+:root {
+  --color-primary-green: #006B3C;
+  --color-secondary-green: #0B7A46;
+  --color-pale-green: #EAF6EF;
+  --color-page-bg: #F5F7F6;
+  --color-surface: #FFFFFF;
+  --color-border-subtle: #E0E6E3;
+  --color-text-main: #1C2826;
+  --color-text-muted: #5C6B66;
+  --color-readonly-bg: #EDF2EE;
+  --color-error: #B3261E;
+  --color-error-bg: #FDF2F2;
+  --color-warning: #B78103;
+  --color-warning-bg: #FEF9E7;
+  --color-success: #137333;
+}
+
+body {
+  background-color: var(--color-page-bg);
+  color: var(--color-text-main);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Zen Green Header */
+.zen-header {
+  background-color: var(--color-primary-green);
+  color: #FFFFFF;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.zen-nav-link {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  padding: 8px 16px;
+  font-weight: 500;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease-in-out;
+}
+
+.zen-nav-link:hover {
+  color: #FFFFFF;
+}
+
+.zen-nav-link.active {
+  color: #FFFFFF;
+  font-weight: 700;
+  border-bottom: 3px solid #66BB6A;
+}
+
+/* Zen Green Buttons */
+.btn-zen-primary {
+  background-color: var(--color-primary-green);
+  border-color: var(--color-primary-green);
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.btn-zen-primary:hover,
+.btn-zen-primary:focus {
+  background-color: #00502D;
+  border-color: #00502D;
+  color: #FFFFFF;
+}
+
+.btn-zen-secondary {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-primary-green);
+  color: var(--color-primary-green);
+  font-weight: 600;
+}
+
+.btn-zen-secondary:hover {
+  background-color: var(--color-pale-green);
+  color: var(--color-primary-green);
+}
+
+/* Zen Cards & Containers */
+.zen-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Form Controls */
+.zen-input,
+.zen-select {
+  height: 40px;
+  border: 1px solid #CED4DA;
+  border-radius: 6px;
+}
+
+.zen-input:focus,
+.zen-select:focus {
+  border-color: var(--color-secondary-green);
+  box-shadow: 0 0 0 0.2rem rgba(11, 122, 70, 0.15);
+}
+
+.zen-readonly {
+  background-color: var(--color-readonly-bg) !important;
+  border-color: #D5DCD7 !important;
+  color: #33413C;
+}
+
+/* User Profile Badge */
+.user-profile-badge {
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #FFFFFF;
+  border-radius: 20px;
+  padding: 4px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Zen Badges */
+.badge-priority-low {
+  background-color: #E2E8F0;
+  color: #334155;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.badge-priority-medium {
+  background-color: #E0F2FE;
+  color: #0369A1;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.badge-priority-high {
+  background-color: #FEF3C7;
+  color: #B45309;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.badge-priority-urgent {
+  background-color: #FEE2E2;
+  color: #B91C1C;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.badge-status-new {
+  background-color: var(--color-pale-green);
+  color: var(--color-primary-green);
+  font-weight: 600;
+  border: 1px solid rgba(0, 107, 60, 0.25);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.badge-status-open {
+  background-color: #E0F2FE;
+  color: #0369A1;
+  font-weight: 600;
+  border: 1px solid rgba(3, 105, 161, 0.25);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.badge-status-inprogress {
+  background-color: #FEF3C7;
+  color: #92400E;
+  font-weight: 600;
+  border: 1px solid rgba(146, 64, 14, 0.25);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.badge-status-resolved {
+  background-color: #DCFCE7;
+  color: #166534;
+  font-weight: 600;
+  border: 1px solid rgba(22, 101, 52, 0.25);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.badge-status-closed {
+  background-color: #F1F5F9;
+  color: #475569;
+  font-weight: 600;
+  border: 1px solid rgba(71, 85, 105, 0.25);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+/* Zen Table */
+.zen-table {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.zen-table thead th {
+  background-color: #F8FAF9;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid var(--color-border-subtle);
+  padding: 12px 16px;
+  vertical-align: middle;
+}
+
+.zen-table tbody td {
+  padding: 14px 16px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.zen-table-row {
+  transition: background-color 0.15s ease-in-out;
+}
+
+.zen-table-row:hover {
+  background-color: var(--color-pale-green) !important;
+}
+
+/* Pagination */
+.pagination .page-item.active .page-link {
+  background-color: var(--color-primary-green);
+  border-color: var(--color-primary-green);
+  color: #FFFFFF;
+}
+
+.pagination .page-link {
+  color: var(--color-primary-green);
+}
+
+.pagination .page-link:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0, 107, 60, 0.25);
+}
+
