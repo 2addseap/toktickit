@@ -1,75 +1,64 @@
 import { useState } from "react";
-import { checkSystem, Category } from "./api.js";
+import { RequesterProvider, useRequester } from "./context/RequesterContext.js";
+import Navbar from "./components/Navbar.js";
+import RequesterSelect from "./components/RequesterSelect.js";
 
-// UI states you must handle for Issue 4: idle, loading, success, error.
-type UiState = "idle" | "loading" | "success" | "error";
+function MainContent() {
+  const { currentRequester, isSelectorOpen } = useRequester();
+  const [currentTab, setCurrentTab] = useState<"my-tickets" | "create-ticket">("my-tickets");
 
-export default function App() {
-  const [state, setState] = useState<UiState>("idle");
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [errorMessage, setErrorMessage] = useState<string>("");
-
-  async function handleCheck() {
-    setState("loading");
-    setErrorMessage("");
-    try {
-      const result = await checkSystem();
-      setCategories(result.categories);
-      setState("success");
-    } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : "Unable to connect to TokTickIT API");
-      setState("error");
-    }
+  if (!currentRequester || isSelectorOpen) {
+    return <RequesterSelect />;
   }
 
   return (
-    <div className="container py-5" style={{ maxWidth: 640 }}>
-      <h1 className="h3 mb-4">
-        TokTickIT <span className="text-success">IT Service Desk</span>
-      </h1>
+    <div>
+      <Navbar currentTab={currentTab} onTabChange={setCurrentTab} />
 
-      <button
-        className="btn btn-success mb-4"
-        onClick={handleCheck}
-        disabled={state === "loading"}
-      >
-        {state === "loading" ? "Loading…" : "Check System"}
-      </button>
-
-      {state === "loading" && (
-        <div className="text-muted" role="status">
-          ⏳ Loading…
-        </div>
-      )}
-
-      {state === "success" && (
-        <div className="mt-3">
-          <p className="fw-semibold mb-3">
-            System Status: <span className="text-success">Online</span>
-          </p>
-          {categories.length > 0 && (
-            <div>
-              <h2 className="h6 fw-bold">Supported Request Categories:</h2>
-              <ol className="list-group list-group-numbered">
-                {categories.map((cat) => (
-                  <li key={cat.id} className="list-group-item">
-                    {cat.name}
-                  </li>
-                ))}
-              </ol>
+      <main className="container py-4">
+        {currentTab === "my-tickets" && (
+          <div className="zen-card p-4">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h1 className="h3 fw-bold mb-1">My Tickets</h1>
+                <p className="text-muted small mb-0">
+                  Viewing tickets submitted by <strong>{currentRequester.name}</strong> ({currentRequester.email})
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn btn-zen-primary"
+                onClick={() => setCurrentTab("create-ticket")}
+              >
+                ➕ Create Ticket
+              </button>
             </div>
-          )}
-        </div>
-      )}
+            <div className="p-4 text-center text-muted bg-light rounded border">
+              📋 My Tickets view will be fully implemented in Issue 4.
+            </div>
+          </div>
+        )}
 
-      {state === "error" && (
-        <div className="mt-3">
-          <p className="fw-semibold text-danger mb-1">
-            System Status: <span>Offline</span>
-          </p>
-          <p className="text-danger">{errorMessage || "Unable to connect to TokTickIT API"}</p>
-        </div>
-      )}
+        {currentTab === "create-ticket" && (
+          <div className="zen-card p-4" style={{ maxWidth: 840 }}>
+            <h1 className="h3 fw-bold mb-3">Create New Support Ticket</h1>
+            <p className="text-muted small mb-4">
+              Submit a support request on behalf of <strong>{currentRequester.name}</strong>.
+            </p>
+            <div className="p-4 text-center text-muted bg-light rounded border">
+              ✍️ Create Ticket form will be fully implemented in Issue 3.
+            </div>
+          </div>
+        )}
+      </main>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <RequesterProvider>
+      <MainContent />
+    </RequesterProvider>
   );
 }
