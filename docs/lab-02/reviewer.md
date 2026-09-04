@@ -23,27 +23,25 @@
 
 **How I responded:**
 • Issue 1: "Thanks for the review! Proceeding with Issue 2 implementation."
-• Issue 2: "Thank you for reviewing. Moving on to Issue 3 ticket creation."
-• Issue 3: "Thanks for the feedback! Moving on to Issue 4 My Tickets list and pagination."
-• Issue 4: "Appreciate the thorough review! Starting Issue 5 Ticket Detail & Attachments."
+• Issue 2: "Thank you for reviewing. Moving on to Issue 3."
+• Issue 3: "Thanks for the feedback! Moving on to Issue 4."
+• Issue 4: "Appreciate the thorough review! Starting Issue 5."
 • Issue 5: "Thank you for verifying the security and soft-removal rules! Moving to Issue 6."
 • Issue 6: "Thanks for the final review! Ready to create the release PR into main."
 
 ## Pull Requests I reviewed for my partner
 **My comment:**
-• Issue 1: "Specification covers all requirements and test plan maps cleanly to all acceptance criteria. Approved!"
-• Issue 2: "Requester models and active requester context selector work as expected. All tests passing cleanly."
-• Issue 3: "Ticket creation endpoint handles validation and file uploads properly. Form UI looks great. Approved!"
-• Issue 4: "Search, filter, sorting, and pagination work smoothly with requester isolation. Approved!"
-• Issue 5: "Ticket detail and attachment soft removal lifecycle implemented properly with 410 protection. Approved!"
-• Issue 6: "Responsive visual styling verified across viewports and all test suites passing. Great job!"
+• Issue 1: "Looks great! All required documentation files and the test plan are cleanly structured according to the Spec DD guidelines. The addition of AGENTS.md is very helpful for the upcoming implementation tasks. Approved!"
+• Issue 2: "The code looks fine for me, please continue the next issue. Great job!"
+• Issue 3: "Great job on Issue 3! The backend creates official ticket numbers correctly, sets the starting status to New, checks form inputs, and handles file uploads safely. The Zen Green form looks clean with nice read-only fields, inline error text, a busy submit button, and a clear success screen. All backend and frontend tests pass, so this is approved and ready to merge into lab2-staging!"
+• Issue 4: "Reviewed the changes. The data isolation between different requesterIds is properly enforced both in the Prisma query and in the UI when switching requesters in the header. Tested the live search and priority filter on http://localhost:5173/ — table updates quickly and the pagination counts are accurate. Approved!"
+• Issue 5: "Great work on Issue 5! The ticket detail view looks clean, ownership checks are properly enforced, and the soft-removal lifecycle works smoothly. The Zen Green styling clearly distinguishes active from removed files. All tests pass—approved and ready to merge into lab2-staging"
 
 **Partner's response:**
-• Issue 1: "Thank you for the review! Starting work on Issue 2."
-• Issue 2: "Thanks! Proceeding with Issue 3."
-• Issue 3: "Thanks for checking! Moving to Issue 4."
-• Issue 4: "Thank you! Starting Issue 5."
-• Issue 5: "Appreciate the review! Proceeding with Issue 6."
-• Issue 6: "Thanks for all the reviews throughout Sprint 2! Ready to merge into main."
+• Issue 1: "Thanks for your review, I will proceed follow this specification !"
+• Issue 2: "Thank a lots. I'll proceed to next Issue."
+• Issue 3: "Thanks, Got it. I will care fully continue the next issue based on your concerned!"
+• Issue 4: "Thanks for reviewing! Confirmed that switching requesters immediately resets the pagination and re-fetches only the newly active requester's tickets. I will continue now."
+• Issue 5: "Thanks for all the time you spend reviewing my task!"
 
 
