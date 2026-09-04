@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import multer from "multer";
+import fs from "fs";
 import { Prisma } from "@prisma/client";
 import { getPrisma } from "./prisma.js";
 import { upload, generateTicketNumber } from "./upload.js";
@@ -346,6 +347,293 @@ app.get("/api/tickets", async (req: Request, res: Response) => {
   } catch (err) {
     console.error("Failed to fetch tickets:", err);
     res.status(500).json({ error: "Failed to retrieve tickets." });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Lab 2 — Issue 5: Ticket Detail and Attachment Lifecycle Endpoints
+// ---------------------------------------------------------------------------
+
+// Single file upload middleware with error handling
+const handleSingleUpload = (req: Request, res: Response, next: NextFunction) => {
+  const uploadSingle = upload.single("file");
+  uploadSingle(req, res, (err: unknown) => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({
+            error: "File Too Large",
+            message: "Attachment must be 5 MB or less.",
+          });
+        }
+      }
+      return res.status(400).json({
+        error: "Invalid Attachment",
+        message: err instanceof Error ? err.message : "Failed to process attachment upload",
+      });
+    }
+    next();
+  });
+};
+
+// 1. GET /api/tickets/:id — Get Owned Ticket Detail
+app.get("/api/tickets/:id", async (req: Request, res: Response) => {
+  try {
+    const prisma = getPrisma();
+    const rawRequesterId = req.headers["x-requester-id"] ?? req.query.requesterId;
+    const requesterId = Number(rawRequesterId);
+
+    if (!requesterId || isNaN(requesterId)) {
+      return res.status(400).json({
+        error: "Requester Context Required",
+        message: "A valid x-requester-id header or requesterId query param is required.",
+      });
+    }
+
+    const ticketId = Number(req.params.id);
+    if (!ticketId || isNaN(ticketId)) {
+      return res.status(400).json({ error: "Invalid ticket ID." });
+    }
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+      include: {
+        requester: { select: { id: true, name: true, email: true, department: true } },
+        category: { select: { id: true, name: true } },
+        relatedSystem: { select: { id: true, name: true } },
+        attachments: {
+          orderBy: { createdAt: "asc" },
+        },
+      },
+    });
+
+    if (!ticket) {
+      return res.status(404).json({ error: "Ticket not found." });
+    }
+
+    // Ownership verification (BR-05, AC-12)
+    if (ticket.requesterId !== requesterId) {
+      return res.status(403).json({
+        error: "Access Denied",
+        message: "You do not have permission to view this ticket.",
+      });
+    }
+
+    res.status(200).json(ticket);
+  } catch (err) {
+    console.error("Failed to retrieve ticket details:", err);
+    res.status(500).json({ error: "Failed to retrieve ticket details." });
+  }
+});
+
+// 2. POST /api/tickets/:id/attachments — Upload Attachment to Existing Ticket
+app.post("/api/tickets/:id/attachments", handleSingleUpload, async (req: Request, res: Response) => {
+  try {
+    const prisma = getPrisma();
+    const rawRequesterId = req.headers["x-requester-id"] ?? req.body.requesterId;
+    const requesterId = Number(rawRequesterId);
+
+    if (!requesterId || isNaN(requesterId)) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return res.status(400).json({
+        error: "Requester Context Required",
+        message: "A valid x-requester-id header is required.",
+      });
+    }
+
+    const ticketId = Number(req.params.id);
+    if (!ticketId || isNaN(ticketId)) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return res.status(400).json({ error: "Invalid ticket ID." });
+    }
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+      include: {
+        attachments: {
+          where: { isRemoved: false },
+        },
+      },
+    });
+
+    if (!ticket) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return res.status(404).json({ error: "Ticket not found." });
+    }
+
+    // Ownership check
+    if (ticket.requesterId !== requesterId) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return res.status(403).json({
+        error: "Access Denied",
+        message: "You do not have permission to upload attachments to this ticket.",
+      });
+    }
+
+    // Check active attachment quota (BR-12, AC-14)
+    if (ticket.attachments.length >= 5) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return res.status(400).json({
+        error: "Quota Exceeded",
+        message: "Maximum 5 active attachments allowed per ticket.",
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        error: "No File Uploaded",
+        message: "Please select a file to upload.",
+      });
+    }
+
+    const newAttachment = await prisma.attachment.create({
+      data: {
+        ticketId: ticket.id,
+        fileName: req.file.originalname,
+        storedPath: req.file.path,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+        isRemoved: false,
+      },
+    });
+
+    res.status(201).json(newAttachment);
+  } catch (err) {
+    if (req.file && fs.existsSync(req.file.path)) {
+      try { fs.unlinkSync(req.file.path); } catch {}
+    }
+    console.error("Failed to upload attachment:", err);
+    res.status(500).json({ error: "Failed to upload attachment." });
+  }
+});
+
+// 3. GET /api/attachments/:id/download — Download Active Attachment
+app.get("/api/attachments/:id/download", async (req: Request, res: Response) => {
+  try {
+    const prisma = getPrisma();
+    const rawRequesterId = req.headers["x-requester-id"] ?? req.query.requesterId;
+    const requesterId = Number(rawRequesterId);
+
+    if (!requesterId || isNaN(requesterId)) {
+      return res.status(400).json({
+        error: "Requester Context Required",
+        message: "A valid x-requester-id header or requesterId query param is required.",
+      });
+    }
+
+    const attachmentId = Number(req.params.id);
+    if (!attachmentId || isNaN(attachmentId)) {
+      return res.status(400).json({ error: "Invalid attachment ID." });
+    }
+
+    const attachment = await prisma.attachment.findUnique({
+      where: { id: attachmentId },
+      include: { ticket: true },
+    });
+
+    if (!attachment) {
+      return res.status(404).json({ error: "Attachment not found." });
+    }
+
+    // Ownership check
+    if (attachment.ticket.requesterId !== requesterId) {
+      return res.status(403).json({
+        error: "Access Denied",
+        message: "You do not have permission to download this attachment.",
+      });
+    }
+
+    // Soft removal check (BR-14, AC-17) -> return 410 Gone
+    if (attachment.isRemoved) {
+      return res.status(410).json({
+        error: "Attachment Gone",
+        message: "This attachment has been removed and cannot be downloaded.",
+        removalReason: attachment.removalReason,
+      });
+    }
+
+    if (!fs.existsSync(attachment.storedPath)) {
+      return res.status(404).json({ error: "File not found on server disk." });
+    }
+
+    res.download(attachment.storedPath, attachment.fileName);
+  } catch (err) {
+    console.error("Failed to download attachment:", err);
+    res.status(500).json({ error: "Failed to download attachment." });
+  }
+});
+
+// 4. PATCH /api/attachments/:id/soft-remove — Soft-Remove Attachment with Mandatory Reason
+app.patch("/api/attachments/:id/soft-remove", async (req: Request, res: Response) => {
+  try {
+    const prisma = getPrisma();
+    const rawRequesterId = req.headers["x-requester-id"] ?? req.body.requesterId;
+    const requesterId = Number(rawRequesterId);
+
+    if (!requesterId || isNaN(requesterId)) {
+      return res.status(400).json({
+        error: "Requester Context Required",
+        message: "A valid x-requester-id header is required.",
+      });
+    }
+
+    const attachmentId = Number(req.params.id);
+    if (!attachmentId || isNaN(attachmentId)) {
+      return res.status(400).json({ error: "Invalid attachment ID." });
+    }
+
+    const { reason } = req.body;
+    const trimmedReason = typeof reason === "string" ? reason.trim() : "";
+    if (!trimmedReason || trimmedReason.length < 3) {
+      return res.status(400).json({
+        error: "Validation Failed",
+        message: "Removal reason is required and must be at least 3 characters.",
+      });
+    }
+
+    const attachment = await prisma.attachment.findUnique({
+      where: { id: attachmentId },
+      include: { ticket: true },
+    });
+
+    if (!attachment) {
+      return res.status(404).json({ error: "Attachment not found." });
+    }
+
+    // Ownership check
+    if (attachment.ticket.requesterId !== requesterId) {
+      return res.status(403).json({
+        error: "Access Denied",
+        message: "You do not have permission to remove this attachment.",
+      });
+    }
+
+    if (attachment.isRemoved) {
+      return res.status(400).json({
+        error: "Already Removed",
+        message: "This attachment has already been removed.",
+      });
+    }
+
+    const requester = await prisma.requesterUser.findUnique({
+      where: { id: requesterId },
+    });
+    const removedByName = requester?.name || `Requester #${requesterId}`;
+
+    const updatedAttachment = await prisma.attachment.update({
+      where: { id: attachmentId },
+      data: {
+        isRemoved: true,
+        removalReason: trimmedReason,
+        removedAt: new Date(),
+        removedBy: removedByName,
+      },
+    });
+
+    res.status(200).json(updatedAttachment);
+  } catch (err) {
+    console.error("Failed to soft-remove attachment:", err);
+    res.status(500).json({ error: "Failed to remove attachment." });
   }
 });
 
