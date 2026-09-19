@@ -1,4 +1,5 @@
 import { useRequester } from "../context/RequesterContext.js";
+import { useAuth } from "../context/AuthContext.js";
 
 interface NavbarProps {
   currentTab: "my-tickets" | "create-ticket";
@@ -7,6 +8,26 @@ interface NavbarProps {
 
 export default function Navbar({ currentTab, onTabChange }: NavbarProps) {
   const { currentRequester, openSelector } = useRequester();
+  let authContext: any = null;
+  try {
+    authContext = useAuth();
+  } catch {
+    // Graceful fallback if AuthProvider is not in tree
+  }
+
+  const currentUser = authContext?.currentUser;
+  const logout = authContext?.logout;
+
+  const renderRoleBadge = (role?: string) => {
+    if (!role) return null;
+    if (role === "ADMINISTRATOR") {
+      return <span className="badge bg-warning text-dark fw-semibold ms-2">Administrator</span>;
+    }
+    if (role === "IT_STAFF") {
+      return <span className="badge bg-info text-dark fw-semibold ms-2">IT Staff</span>;
+    }
+    return <span className="badge bg-white text-success fw-semibold ms-2">Requester</span>;
+  };
 
   return (
     <header className="zen-header py-2 px-3 mb-4">
@@ -18,7 +39,7 @@ export default function Navbar({ currentTab, onTabChange }: NavbarProps) {
         </div>
 
         {/* Navigation Tabs */}
-        {currentRequester && (
+        {(currentUser || currentRequester) && (
           <nav className="d-flex align-items-center gap-2">
             <button
               type="button"
@@ -37,13 +58,26 @@ export default function Navbar({ currentTab, onTabChange }: NavbarProps) {
           </nav>
         )}
 
-        {/* Right Side: Requester Identity & Switch Button */}
+        {/* Right Side: Identity & Actions */}
         <div className="d-flex align-items-center ms-auto">
-          {currentRequester ? (
+          {currentUser ? (
+            <div className="user-profile-badge d-flex align-items-center">
+              <span className="fw-semibold">👤 {currentUser.name}</span>
+              {renderRoleBadge(currentUser.role)}
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-light ms-3 py-1 px-2 rounded"
+                onClick={() => logout && logout()}
+                title="Sign Out"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : currentRequester ? (
             <div className="user-profile-badge">
               <span className="fw-semibold">👤 {currentRequester.name}</span>
               {currentRequester.department && (
-                <span className="text-white-50 small">({currentRequester.department})</span>
+                <span className="text-white-50 small ms-1">({currentRequester.department})</span>
               )}
               <button
                 type="button"

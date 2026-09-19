@@ -8,6 +8,36 @@ export interface RequesterUser {
   isActive: boolean;
 }
 
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
+  department?: string | null;
+  mustChangePassword: boolean;
+}
+
+export function getToken(): string | null {
+  return localStorage.getItem("toktickit_auth_token");
+}
+
+export function setToken(token: string): void {
+  localStorage.setItem("toktickit_auth_token", token);
+}
+
+export function clearToken(): void {
+  localStorage.removeItem("toktickit_auth_token");
+}
+
+export function getAuthHeaders(): Record<string, string> {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 export interface Category {
   id: number;
   name: string;
@@ -259,6 +289,77 @@ export async function softRemoveAttachment(
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data.message || data.error || "Failed to remove attachment");
+  }
+
+  return data;
+}
+
+export async function login(email: string, password: string): Promise<{ token: string; user: User }> {
+  const res = await fetch(`${API_URL}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Login failed.");
+  }
+
+  setToken(data.token);
+  return data;
+}
+
+export async function logout(): Promise<void> {
+  try {
+    await fetch(`${API_URL}/api/auth/logout`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
+  } finally {
+    clearToken();
+  }
+}
+
+export async function getMe(): Promise<User> {
+  const token = getToken();
+  if (!token) throw new Error("No authentication token found.");
+
+  const res = await fetch(`${API_URL}/api/auth/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    clearToken();
+    throw new Error(data.message || "Failed to retrieve user profile.");
+  }
+
+  return data;
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword: string
+): Promise<{ message: string; user: User }> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/auth/change-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to update password.");
   }
 
   return data;
