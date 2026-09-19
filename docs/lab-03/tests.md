@@ -15,13 +15,13 @@ To guarantee the integrity of real authentication, multi-role authorization, IT 
 
 | Test ID | Level | Requirement / AC | What It Tests | Expected Result | Automated Test File | Planned Status |
 |---|---|---|---|---|---|---|
-| **UNIT-01** | Unit | BR-03, AC-04 | Password complexity validation | Requires $\ge 8$ chars, upper, lower, number/symbol | `server/tests/lab-03/auth.api.test.ts` | Planned |
+| **UNIT-01** | Unit | BR-03, AC-04 | Password complexity validation | Requires $\ge 8$ chars, upper, lower, number/symbol | `server/tests/lab-03/auth.api.test.ts` | **Passed** |
 | **UNIT-02** | Unit | BR-16, AC-15 | Status transition matrix validator | Permits valid transitions; rejects disallowed jumps | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
-| **API-01** | API | AC-01, FR-01 | `POST /api/auth/login` valid credentials | Returns 200 with JWT token and sanitized user profile | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| **API-02** | API | AC-02, BR-01 | `POST /api/auth/login` inactive user | Returns 401 with generic `"Invalid email or password."` | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| **API-03** | API | AC-03, BR-02 | User with `mustChangePassword = true` | Login returns flag; non-auth APIs return 403 `PASSWORD_CHANGE_REQUIRED` | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| **API-04** | API | AC-04, BR-03 | `POST /api/auth/change-password` valid | Hashes new password, sets flag to false, restores normal access | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| **API-05** | API | FR-03, BR-06 | `POST /api/auth/logout` | Returns 200 and invalidates current session | `server/tests/lab-03/auth.api.test.ts` | Planned |
+| **API-01** | API | AC-01, FR-01 | `POST /api/auth/login` valid credentials | Returns 200 with JWT token and sanitized user profile | `server/tests/lab-03/auth.api.test.ts` | **Passed** |
+| **API-02** | API | AC-02, BR-01 | `POST /api/auth/login` inactive user | Returns 401 with generic `"Invalid email or password."` | `server/tests/lab-03/auth.api.test.ts` | **Passed** |
+| **API-03** | API | AC-03, BR-02 | User with `mustChangePassword = true` | Login returns flag; non-auth APIs return 403 `PASSWORD_CHANGE_REQUIRED` | `server/tests/lab-03/auth.api.test.ts` | **Passed** |
+| **API-04** | API | AC-04, BR-03 | `POST /api/auth/change-password` valid | Hashes new password, sets flag to false, restores normal access | `server/tests/lab-03/auth.api.test.ts` | **Passed** |
+| **API-05** | API | FR-03, BR-06 | `POST /api/auth/logout` | Returns 200 and invalidates current session | `server/tests/lab-03/auth.api.test.ts` | **Passed** |
 | **API-06** | API | AC-05, BR-07 | Session-derived requester identity | `POST /api/tickets` ignores client `requesterId` and binds to session user | `server/tests/lab-03/authorization.api.test.ts` | Planned |
 | **API-07** | API | AC-06, BR-09 | Requester cross-ticket access | Returns 403 when Requester A accesses Requester B's ticket | `server/tests/lab-03/authorization.api.test.ts` | Planned |
 | **API-08** | API | AC-07, BR-14 | `PATCH /api/tickets/:id/resolve-indication` | Records `resolvedIndicated = true` without modifying ticket status | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
@@ -38,9 +38,9 @@ To guarantee the integrity of real authentication, multi-role authorization, IT 
 | **API-19** | API | AC-18, BR-25 | Duplicate email rejection | Returns 409 Conflict when creating/editing user with existing email | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
 | **API-20** | API | AC-19, BR-22 | Self-deactivation prevention | Returns 400 Bad Request if admin attempts to deactivate self | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
 | **API-21** | API | AC-20, BR-23 | Last active admin protection | Returns 400 Bad Request if deactivating the last active administrator | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
-| **API-22** | API | AC-21, BR-10 | Admin routes blocked for non-Admin | Returns 403 Forbidden when Requester or IT Staff access `/api/admin/*` | `server/tests/lab-03/authorization.api.test.ts` | Planned |
-| **UI-01** | UI | AC-01, AC-02 | Login screen rendering & validation | Validates required email/password, shows spinner, renders errors | `client/tests/lab-03/Login.test.tsx` | Planned |
-| **UI-02** | UI | AC-03, AC-04 | Change Password screen & checklist | Validates rules dynamically, submits new password, redirects | `client/tests/lab-03/ChangePassword.test.tsx` | Planned |
+| **API-22** | API | AC-21, BR-10 | Admin routes blocked for non-Admin | Returns 403 Forbidden when Requester or IT Staff access `/api/admin/*` | `server/tests/lab-03/authorization.api.test.ts` | **Passed** |
+| **UI-01** | UI | AC-01, AC-02 | Login screen rendering & validation | Validates required email/password, shows spinner, renders errors | `client/tests/lab-03/Login.test.tsx` | **Passed** |
+| **UI-02** | UI | AC-03, AC-04 | Change Password screen & checklist | Validates rules dynamically, submits new password, redirects | `client/tests/lab-03/ChangePassword.test.tsx` | **Passed** |
 | **UI-03** | UI | AC-11 | Staff Ticket Queue data grid | Renders queue table, filter chips, search input, and pagination | `client/tests/lab-03/StaffTicketQueue.test.tsx` | Planned |
 | **UI-04** | UI | AC-13, AC-14 | Staff Ticket Detail operational panel | Handles claim, reassign dropdown, IT Priority selector, status update | `client/tests/lab-03/StaffTicketDetail.test.tsx` | Planned |
 | **UI-05** | UI | AC-08, AC-10 | Public Comments vs Internal Notes | Separate tabs, amber background for internal notes, append forms | `client/tests/lab-03/StaffTicketDetail.test.tsx` | Planned |
@@ -56,10 +56,10 @@ To guarantee the integrity of real authentication, multi-role authorization, IT 
 
 | Acceptance Criterion | Description | Mapped Automated Tests | Planned Status |
 |---|---|---|---|
-| **AC-01** | Valid credentials establish authenticated session and return user profile | `API-01`, `UI-01`, `E2E-01` | Planned |
-| **AC-02** | Inactive accounts rejected with generic 401 Unauthorized | `API-02`, `UI-01` | Planned |
-| **AC-03** | First-login password change intercepted on protected endpoints | `API-03`, `UI-02`, `E2E-02` | Planned |
-| **AC-04** | Successful password change clears flag and restores normal access | `UNIT-01`, `API-04`, `UI-02`, `E2E-02` | Planned |
+| **AC-01** | Valid credentials establish authenticated session and return user profile | `API-01`, `UI-01`, `E2E-01` | **Passed** (API & UI) |
+| **AC-02** | Inactive accounts rejected with generic 401 Unauthorized | `API-02`, `UI-01` | **Passed** |
+| **AC-03** | First-login password change intercepted on protected endpoints | `API-03`, `UI-02`, `E2E-02` | **Passed** (API & UI) |
+| **AC-04** | Successful password change clears flag and restores normal access | `UNIT-01`, `API-04`, `UI-02`, `E2E-02` | **Passed** (API & UI) |
 | **AC-05** | Requester operations strictly bound to session identity | `API-06` | Planned |
 | **AC-06** | Cross-requester ticket and attachment access rejected (403/404) | `API-07` | Planned |
 | **AC-07** | Requester can signal "Problem Appears Resolved" without mutating status | `API-08` | Planned |
@@ -76,7 +76,7 @@ To guarantee the integrity of real authentication, multi-role authorization, IT 
 | **AC-18** | Duplicate email rejection on user creation and edit | `API-19`, `UI-06` | Planned |
 | **AC-19** | Admin self-deactivation prevented | `API-20`, `UI-06`, `E2E-04` | Planned |
 | **AC-20** | Last active administrator cannot be deactivated or demoted | `API-21`, `UI-06`, `E2E-04` | Planned |
-| **AC-21** | Admin endpoints strictly forbidden for Requester and IT Staff | `API-22` | Planned |
+| **AC-21** | Admin endpoints strictly forbidden for Requester and IT Staff | `API-22` | **Passed** |
 
 ---
 

@@ -5,6 +5,14 @@ import fs from "fs";
 import { Prisma } from "@prisma/client";
 import { getPrisma } from "./prisma.js";
 import { upload, generateTicketNumber } from "./upload.js";
+import {
+  hashPassword,
+  comparePassword,
+  validatePasswordComplexity,
+  generateToken,
+  authenticate,
+  requireRole,
+} from "./auth.js";
 
 export const app = express();
 
@@ -32,14 +40,163 @@ app.get("/api/categories", async (_req: Request, res: Response) => {
 });
 
 // ---------------------------------------------------------------------------
+// Lab 3 — Issue 2: Authentication & Identity Endpoints
+// ---------------------------------------------------------------------------
+
+// 1. Authenticate User (Login)
+app.post("/api/auth/login", async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({
+        error: "Validation Failed",
+        message: "Email and password are required.",
+      });
+    }
+
+    const trimmedEmail = String(email).trim().toLowerCase();
+    const user = await getPrisma().user.findUnique({
+      where: { email: trimmedEmail },
+    });
+
+    if (!user || !user.isActive) {
+      return res.status(401).json({
+        error: "Unauthorized",
+        message: "Invalid email or password.",
+      });
+    }
+
+    const isValidPassword = await comparePassword(String(password), user.passwordHash);
+    if (!isValidPassword) {
+      return res.status(401).json({
+        error: "Unauthorized",
+        message: "Invalid email or password.",
+      });
+    }
+
+    const token = generateToken({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      mustChangePassword: user.mustChangePassword,
+    });
+
+    res.status(200).json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        mustChangePassword: user.mustChangePassword,
+      },
+    });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Failed to authenticate." });
+  }
+});
+
+// 2. Terminate Session (Logout)
+app.post("/api/auth/logout", (_req: Request, res: Response) => {
+  res.status(200).json({ message: "Logged out successfully." });
+});
+
+// 3. Retrieve Current Authenticated User Profile
+app.get("/api/auth/me", authenticate, (req: Request, res: Response) => {
+  res.status(200).json(req.user);
+});
+
+// 4. Change Password (Mandatory or Voluntary)
+app.post("/api/auth/change-password", authenticate, async (req: Request, res: Response) => {
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+    const userId = req.user!.id;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        error: "Validation Failed",
+        message: "Current password, new password, and confirmation are required.",
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        error: "Validation Failed",
+        message: "New password and confirmation do not match.",
+      });
+    }
+
+    if (newPassword === currentPassword) {
+      return res.status(400).json({
+        error: "Validation Failed",
+        message: "New password must be different from current password.",
+      });
+    }
+
+    const complexity = validatePasswordComplexity(newPassword);
+    if (!complexity.valid) {
+      return res.status(400).json({
+        error: "Validation Failed",
+        message: complexity.errors[0],
+        fieldErrors: { newPassword: complexity.errors[0] },
+      });
+    }
+
+    const user = await getPrisma().user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    const isCurrentValid = await comparePassword(currentPassword, user.passwordHash);
+    if (!isCurrentValid) {
+      return res.status(400).json({
+        error: "Validation Failed",
+        message: "Current password is incorrect.",
+        fieldErrors: { currentPassword: "Current password is incorrect." },
+      });
+    }
+
+    const newHash = await hashPassword(newPassword);
+    const updatedUser = await getPrisma().user.update({
+      where: { id: userId },
+      data: {
+        passwordHash: newHash,
+        mustChangePassword: false,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        department: true,
+        mustChangePassword: true,
+      },
+    });
+
+    res.status(200).json({
+      message: "Password updated successfully.",
+      user: updatedUser,
+    });
+  } catch (err) {
+    console.error("Change password error:", err);
+    res.status(500).json({ error: "Failed to update password." });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Lab 2 — Issue 2: Development Requester Context & Reference Data Endpoints
 // ---------------------------------------------------------------------------
 
 // 1. Get Active Development Requesters
 app.get("/api/requesters", async (_req: Request, res: Response) => {
   try {
-    const requesters = await getPrisma().requesterUser.findMany({
-      where: { isActive: true },
+    const requesters = await getPrisma().user.findMany({
+      where: { role: "REQUESTER", isActive: true },
       orderBy: { id: "asc" },
       select: {
         id: true,
@@ -118,7 +275,7 @@ app.post("/api/tickets", handleUpload, async (req: Request, res: Response) => {
     if (!requesterId || isNaN(requesterId)) {
       fieldErrors.requesterId = "Active development requester is required.";
     } else {
-      const requester = await prisma.requesterUser.findUnique({
+      const requester = await prisma.user.findUnique({
         where: { id: requesterId },
       });
       if (!requester || !requester.isActive) {
@@ -615,7 +772,7 @@ app.patch("/api/attachments/:id/soft-remove", async (req: Request, res: Response
       });
     }
 
-    const requester = await prisma.requesterUser.findUnique({
+    const requester = await prisma.user.findUnique({
       where: { id: requesterId },
     });
     const removedByName = requester?.name || `Requester #${requesterId}`;
