@@ -62,15 +62,15 @@ To guarantee the integrity of real authentication, multi-role authorization, IT 
 | **AC-04** | Successful password change clears flag and restores normal access | `UNIT-01`, `API-04`, `UI-02`, `E2E-02` | **Passed** (API & UI) |
 | **AC-05** | Requester operations strictly bound to session identity | `API-06` | Planned |
 | **AC-06** | Cross-requester ticket and attachment access rejected (403/404) | `API-07` | Planned |
-| **AC-07** | Requester can signal "Problem Appears Resolved" without mutating status | `API-08` | Planned |
-| **AC-08** | Public Comments accessible to Requester owner, IT Staff, and Admin | `API-09`, `UI-05` | Planned |
-| **AC-09** | Internal Notes strictly forbidden and hidden from Requester | `API-10` | Planned |
-| **AC-10** | Internal Notes accessible only to IT Staff and Admin | `API-11`, `UI-05`, `E2E-03` | Planned |
+| **AC-07** | Requester can signal "Problem Appears Resolved" without mutating status | `API-08` | **Passed** |
+| **AC-08** | Public Comments accessible to Requester owner, IT Staff, and Admin | `API-09`, `UI-05` | **Passed** (API & UI) |
+| **AC-09** | Internal Notes strictly forbidden and hidden from Requester | `API-10` | **Passed** |
+| **AC-10** | Internal Notes accessible only to IT Staff and Admin | `API-11`, `UI-05`, `E2E-03` | **Passed** (API & UI) |
 | **AC-11** | IT Staff Ticket Queue with search, filters, sort, and pagination | `API-12`, `UI-03`, `E2E-03` | **Passed** (API & UI) |
 | **AC-12** | Ticket Queue forbidden for Requester role (403 Forbidden) | `API-13` | **Passed** |
-| **AC-13** | Ticket claim and reassignment to active staff | `API-14`, `UI-04`, `E2E-03` | Planned |
-| **AC-14** | IT Priority management independent of Requested Priority | `API-15`, `UI-04`, `E2E-03` | Planned |
-| **AC-15** | Strict status transition lifecycle enforcement | `UNIT-02`, `API-16`, `UI-04`, `E2E-03` | Planned |
+| **AC-13** | Ticket claim and reassignment to active staff | `API-14`, `UI-04`, `E2E-03` | **Passed** (API & UI) |
+| **AC-14** | IT Priority management independent of Requested Priority | `API-15`, `UI-04`, `E2E-03` | **Passed** (API & UI) |
+| **AC-15** | Strict status transition lifecycle enforcement | `UNIT-02`, `API-16`, `UI-04`, `E2E-03` | **Passed** (API & UI) |
 | **AC-16** | Admin user directory with search and role filter | `API-17`, `UI-06`, `E2E-04` | **Passed** (API & UI) |
 | **AC-17** | Admin user creation with initial password and forced reset flag | `API-18`, `UI-06`, `E2E-04` | **Passed** (API & UI) |
 | **AC-18** | Duplicate email rejection on user creation and edit | `API-19`, `UI-06` | **Passed** |

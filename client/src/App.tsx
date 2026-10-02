@@ -10,6 +10,7 @@ import Login from "./components/Login.js";
 import ChangePassword from "./components/ChangePassword.js";
 import UserManagement from "./components/UserManagement.js";
 import StaffTicketQueue from "./components/StaffTicketQueue.js";
+import StaffTicketDetail from "./components/StaffTicketDetail.js";
 
 function MainContent() {
   const { currentUser, isLoading, isAuthenticated } = useAuth();
@@ -60,10 +61,17 @@ function MainContent() {
 
       <main className="container py-4">
         {selectedTicketId ? (
-          <TicketDetail
-            ticketId={selectedTicketId}
-            onBack={() => setSelectedTicketId(null)}
-          />
+          currentUser?.role === "IT_STAFF" || currentUser?.role === "ADMINISTRATOR" ? (
+            <StaffTicketDetail
+              ticketId={selectedTicketId}
+              onBack={() => setSelectedTicketId(null)}
+            />
+          ) : (
+            <TicketDetail
+              ticketId={selectedTicketId}
+              onBack={() => setSelectedTicketId(null)}
+            />
+          )
         ) : (
           <>
             {currentTab === "my-tickets" && (
