@@ -293,17 +293,17 @@ Full endpoint specifications and payload schemas are documented in [api-spec.md]
 
 ## 11. Definition of Done (DoD)
 
-- [ ] Sprint 3 Engineering Contract approved (`docs/lab-03/specification.md`, `ui-spec.md`, `api-spec.md`, `tests.md`).
-- [ ] Database evolved via Prisma migration preserving Lab 2 tickets and attachments; idempotent seed data executed.
-- [ ] Secure authentication, session management, and mandatory first-login password change implemented and verified.
-- [ ] All Lab 2 Requester workflows pass regression tests using session-derived identity.
-- [ ] IT Staff Ticket Queue and Ticket Detail workflows (claim, reassign, IT priority, status lifecycle) operational.
-- [ ] Dual-tier commenting implemented (Public Comments accessible to owner/staff/admin; Internal Notes strictly isolated to staff/admin).
-- [ ] Administrator User Management screen and APIs functional with safety guardrails (self-deactivation and last-admin protections).
-- [ ] Responsive Zen Green UI implemented across Desktop, Tablet, and Mobile viewports without layout clipping or horizontal overflow.
-- [ ] 100% of planned automated tests passing (Unit, Supertest API, Vitest UI, Playwright E2E).
-- [ ] Release integration completed via GitHub PR workflow: `feature/*` $\rightarrow$ `lab3-staging` $\rightarrow$ `main`.
-- [ ] Traceable evidence artifacts compiled for PDF submission (`reviewer.md`, `ai-use.md`, test logs, screenshots).
+- [x] Sprint 3 Engineering Contract approved (`docs/lab-03/specification.md`, `ui-spec.md`, `api-spec.md`, `tests.md`).
+- [x] Database evolved via Prisma migration preserving Lab 2 tickets and attachments; idempotent seed data executed.
+- [x] Secure authentication, session management, and mandatory first-login password change implemented and verified.
+- [x] All Lab 2 Requester workflows pass regression tests using session-derived identity.
+- [x] IT Staff Ticket Queue and Ticket Detail workflows (claim, reassign, IT priority, status lifecycle) operational.
+- [x] Dual-tier commenting implemented (Public Comments accessible to owner/staff/admin; Internal Notes strictly isolated to staff/admin).
+- [x] Administrator User Management screen and APIs functional with safety guardrails (self-deactivation and last-admin protections).
+- [x] Responsive Zen Green UI implemented across Desktop, Tablet, and Mobile viewports without layout clipping or horizontal overflow.
+- [x] 100% of planned automated tests passing (Unit, Supertest API, Vitest UI, Playwright E2E).
+- [x] Release integration completed via GitHub PR workflow: `feature/*` $\rightarrow$ `lab3-staging` $\rightarrow$ `main`.
+- [x] Traceable evidence artifacts compiled for PDF submission (`reviewer.md`, `ai-use.md`, test logs, screenshots).
 
 ---
 

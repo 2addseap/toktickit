@@ -60,8 +60,8 @@ To guarantee the integrity of real authentication, multi-role authorization, IT 
 | **AC-02** | Inactive accounts rejected with generic 401 Unauthorized | `API-02`, `UI-01` | **Passed** |
 | **AC-03** | First-login password change intercepted on protected endpoints | `API-03`, `UI-02`, `E2E-02` | **Passed** (API & UI) |
 | **AC-04** | Successful password change clears flag and restores normal access | `UNIT-01`, `API-04`, `UI-02`, `E2E-02` | **Passed** (API & UI) |
-| **AC-05** | Requester operations strictly bound to session identity | `API-06` | Planned |
-| **AC-06** | Cross-requester ticket and attachment access rejected (403/404) | `API-07` | Planned |
+| **AC-05** | Requester operations strictly bound to session identity | `API-06` | **Passed** |
+| **AC-06** | Cross-requester ticket and attachment access rejected (403/404) | `API-07` | **Passed** |
 | **AC-07** | Requester can signal "Problem Appears Resolved" without mutating status | `API-08` | **Passed** |
 | **AC-08** | Public Comments accessible to Requester owner, IT Staff, and Admin | `API-09`, `UI-05` | **Passed** (API & UI) |
 | **AC-09** | Internal Notes strictly forbidden and hidden from Requester | `API-10` | **Passed** |
@@ -82,20 +82,20 @@ To guarantee the integrity of real authentication, multi-role authorization, IT 
 
 ## 4. Visual and Responsive Inspection Checklist
 
-- [ ] **Desktop Viewport ($\ge 992\text{px}$):**
+- [x] **Desktop Viewport ($\ge 992\text{px}$):**
   - Navigation bar displays TokTickIT logo, role-specific nav items, user name, role badge, and Sign Out button.
   - IT Staff Ticket Queue displays full data table with sortable columns and filter bar.
   - IT Staff Ticket Detail shows operational panel and clearly distinguished Public Comments and Internal Notes tabs.
   - Admin User Management displays directory table and action buttons.
-- [ ] **Tablet Viewport ($768\text{px} - 991\text{px}$):**
+- [x] **Tablet Viewport ($768\text{px} - 991\text{px}$):**
   - Tables adapt with horizontal overflow management or column condensing.
   - Filters wrap cleanly into a secondary row without layout breaking.
-- [ ] **Mobile Viewport ($< 768\text{px}$):**
+- [x] **Mobile Viewport ($< 768\text{px}$):**
   - IT Staff Ticket Queue renders stacked card view with visible status and priority badges.
   - Forms stack vertically with $\ge 40\text{px}$ touch targets.
   - Modals adapt to full width with clear top close icons and sticky action buttons.
   - Zero horizontal page scrolling at $375\text{px}$ viewport width.
-- [ ] **Design Token Consistency:**
+- [x] **Design Token Consistency:**
   - Standard Zen Green colors used across buttons, links, and alerts.
   - Role badges: Requester (Blue `#E8F0FE`), IT Staff (Green `#EAF6EF`), Administrator (Amber `#FEF3D6`).
   - Internal Notes card utilizes soft-amber background (`#FFF9E6`) and gold border (`#F0C050`) to eliminate risk of posting confidential operational notes into public channels.

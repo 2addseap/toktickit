@@ -266,8 +266,22 @@ const handleUpload = (req: Request, res: Response, next: NextFunction) => {
 app.post("/api/tickets", handleUpload, async (req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
-    const rawRequesterId = req.headers["x-requester-id"] ?? req.body.requesterId;
-    const requesterId = Number(rawRequesterId);
+    let requesterId: number | null = null;
+    const authHeader = req.headers["authorization"];
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      const decoded = verifyToken(token);
+      if (decoded) {
+        requesterId = decoded.id;
+      }
+    }
+    if (!requesterId) {
+      const rawRequesterId = req.headers["x-requester-id"] ?? req.body.requesterId;
+      const parsed = Number(rawRequesterId);
+      if (parsed && !isNaN(parsed)) {
+        requesterId = parsed;
+      }
+    }
 
     const { categoryId, relatedSystemId, summary, description, requestedPriority } = req.body;
     const fieldErrors: Record<string, string> = {};
@@ -406,10 +420,24 @@ const ALLOWED_SORT_FIELDS = ["createdAt", "ticketNumber", "requestedPriority", "
 app.get("/api/tickets", async (req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
-    const rawRequesterId = req.headers["x-requester-id"] ?? req.query.requesterId;
-    const requesterId = Number(rawRequesterId);
+    let requesterId: number | null = null;
+    const authHeader = req.headers["authorization"];
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      const decoded = verifyToken(token);
+      if (decoded) {
+        requesterId = decoded.id;
+      }
+    }
+    if (!requesterId) {
+      const rawRequesterId = req.headers["x-requester-id"] ?? req.query.requesterId;
+      const parsed = Number(rawRequesterId);
+      if (parsed && !isNaN(parsed)) {
+        requesterId = parsed;
+      }
+    }
 
-    if (!requesterId || isNaN(requesterId)) {
+    if (!requesterId) {
       return res.status(400).json({
         error: "Requester Context Required",
         message: "A valid x-requester-id header or requesterId query param is required.",

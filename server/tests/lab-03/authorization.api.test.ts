@@ -11,6 +11,7 @@ describe("Lab 3 — Issue 2: Authorization & Session Security Tests", () => {
   let requesterToken: string;
   let itStaffToken: string;
   let adminToken: string;
+  let requesterUser: any;
 
   beforeAll(async () => {
     const passwordHash = await bcrypt.hash("Password123!", 10);
@@ -27,6 +28,7 @@ describe("Lab 3 — Issue 2: Authorization & Session Security Tests", () => {
         passwordHash,
       },
     });
+    requesterUser = requester;
 
     const itStaff = await prisma.user.upsert({
       where: { email: "auth.staff@kmutt.ac.th" },
@@ -138,5 +140,71 @@ describe("Lab 3 — Issue 2: Authorization & Session Security Tests", () => {
       .set("Authorization", `Bearer ${itStaffToken}`);
     expect(staffToStaff.status).toBe(200);
     expect(staffToStaff.body.secret).toBe("staff-access-granted");
+  });
+
+  it("API-06 (AC-05): binds GET /api/tickets to authenticated session identity, ignoring spoofed requesterId", async () => {
+    const cat = await prisma.category.findFirst();
+    const relSys = await prisma.relatedSystem.findFirst();
+
+    const ticket = await prisma.ticket.create({
+      data: {
+        ticketNumber: `TKT-2026-${Date.now().toString().slice(-6)}`,
+        requesterId: requesterUser.id,
+        categoryId: cat!.id,
+        relatedSystemId: relSys!.id,
+        summary: "Session Identity Ticket",
+        description: "Testing session binding",
+        requestedPriority: "MEDIUM",
+        status: "New",
+      },
+    });
+
+    // Requester calls with token AND spoofed x-requester-id=99999
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("Authorization", `Bearer ${requesterToken}`)
+      .set("x-requester-id", "99999");
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.some((t: any) => t.id === ticket.id)).toBe(true);
+  });
+
+  it("API-07 (AC-06): rejects cross-requester ticket access with 403 Forbidden", async () => {
+    const otherRequester = await prisma.user.upsert({
+      where: { email: "other.requester@kmutt.ac.th" },
+      update: { role: "REQUESTER", isActive: true },
+      create: {
+        name: "Other Requester",
+        email: "other.requester@kmutt.ac.th",
+        role: "REQUESTER",
+        isActive: true,
+        mustChangePassword: false,
+        passwordHash: await bcrypt.hash("Password123!", 10),
+      },
+    });
+
+    const cat = await prisma.category.findFirst();
+    const relSys = await prisma.relatedSystem.findFirst();
+
+    const otherTicket = await prisma.ticket.create({
+      data: {
+        ticketNumber: `TKT-2026-${(Date.now() + 1).toString().slice(-6)}`,
+        requesterId: otherRequester.id,
+        categoryId: cat!.id,
+        relatedSystemId: relSys!.id,
+        summary: "Private Other Requester Ticket",
+        description: "Confidential ticket",
+        requestedPriority: "HIGH",
+        status: "Open",
+      },
+    });
+
+    // requester tries to access otherRequester's ticket
+    const res = await request(app)
+      .get(`/api/tickets/${otherTicket.id}`)
+      .set("Authorization", `Bearer ${requesterToken}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe("Access Denied");
   });
 });
