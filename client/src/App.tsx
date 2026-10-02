@@ -8,11 +8,12 @@ import MyTickets from "./components/MyTickets.js";
 import TicketDetail from "./components/TicketDetail.js";
 import Login from "./components/Login.js";
 import ChangePassword from "./components/ChangePassword.js";
+import UserManagement from "./components/UserManagement.js";
 
 function MainContent() {
   const { currentUser, isLoading, isAuthenticated } = useAuth();
   const { currentRequester, isSelectorOpen } = useRequester();
-  const [currentTab, setCurrentTab] = useState<"my-tickets" | "create-ticket">("my-tickets");
+  const [currentTab, setCurrentTab] = useState<"my-tickets" | "create-ticket" | "user-management">("my-tickets");
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
 
   // Reset selected ticket if user or requester changes
@@ -78,6 +79,10 @@ function MainContent() {
                 }}
                 onCancel={() => setCurrentTab("my-tickets")}
               />
+            )}
+
+            {currentTab === "user-management" && currentUser?.role === "ADMINISTRATOR" && (
+              <UserManagement />
             )}
           </>
         )}

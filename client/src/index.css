@@ -241,3 +241,59 @@ body {
   box-shadow: 0 0 0 0.2rem rgba(0, 107, 60, 0.25);
 }
 
+/* Role Badges */
+.badge-role-admin {
+  background-color: #FEF3D6;
+  color: #92400E;
+  border: 1px solid #FCD34D;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 4px 8px;
+  display: inline-block;
+  font-size: 0.82rem;
+}
+
+.badge-role-staff {
+  background-color: var(--color-pale-green);
+  color: var(--color-primary-green);
+  border: 1px solid rgba(0, 107, 60, 0.25);
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 4px 8px;
+  display: inline-block;
+  font-size: 0.82rem;
+}
+
+.badge-role-requester {
+  background-color: #E8F0FE;
+  color: #1967D2;
+  border: 1px solid rgba(25, 103, 210, 0.25);
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 4px 8px;
+  display: inline-block;
+  font-size: 0.82rem;
+}
+
+/* Status Badges */
+.badge-status-active {
+  background-color: #E6F4EA;
+  color: #137333;
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 4px 10px;
+  display: inline-block;
+  font-size: 0.82rem;
+}
+
+.badge-status-inactive {
+  background-color: #FDF2F2;
+  color: #B3261E;
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 4px 10px;
+  display: inline-block;
+  font-size: 0.82rem;
+}
+
+

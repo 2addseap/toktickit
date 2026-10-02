@@ -14,7 +14,9 @@ export interface User {
   email: string;
   role: "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
   department?: string | null;
+  isActive?: boolean;
   mustChangePassword: boolean;
+  createdAt?: string;
 }
 
 export function getToken(): string | null {
@@ -362,6 +364,91 @@ export async function changePassword(
     throw new Error(data.message || data.error || "Failed to update password.");
   }
 
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Lab 3 — Issue 3: Admin User Management API
+// ---------------------------------------------------------------------------
+
+export async function getAdminUsers(search?: string, role?: string): Promise<User[]> {
+  const token = getToken();
+  const params = new URLSearchParams();
+  if (search) params.append("search", search);
+  if (role) params.append("role", role);
+
+  const queryString = params.toString() ? `?${params.toString()}` : "";
+  const res = await fetch(`${API_URL}/api/admin/users${queryString}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch admin users.");
+  }
+  return data;
+}
+
+export async function createAdminUser(userData: {
+  name: string;
+  email: string;
+  role: string;
+  department?: string;
+  isActive?: boolean;
+  initialPassword: string;
+}): Promise<User> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/admin/users`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(userData),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to create user.");
+  }
+  return data;
+}
+
+export async function updateAdminUser(id: number, data: Partial<User>): Promise<User> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/admin/users/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const resData = await res.json();
+  if (!res.ok) {
+    throw new Error(resData.message || resData.error || "Failed to update user.");
+  }
+  return resData;
+}
+
+export async function resetAdminUserPassword(id: number, newInitialPassword: string): Promise<{ message: string }> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/admin/users/${id}/reset-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ newInitialPassword }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to reset password.");
+  }
   return data;
 }
 

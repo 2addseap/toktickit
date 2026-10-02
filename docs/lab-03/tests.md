@@ -33,18 +33,18 @@ To guarantee the integrity of real authentication, multi-role authorization, IT 
 | **API-14** | API | AC-13, BR-12 | `PATCH /api/staff/tickets/:id/assign` | Assigns ticket to active IT Staff/Admin; rejects non-staff assignees | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
 | **API-15** | API | AC-14, BR-13 | `PATCH /api/staff/tickets/:id/priority` | Updates operational `itPriority` while keeping `requestedPriority` intact | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
 | **API-16** | API | AC-15, BR-16 | `PATCH /api/staff/tickets/:id/status` | Enforces transition matrix; rejects disallowed jumps with 400 | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
-| **API-17** | API | AC-16, FR-15 | `GET /api/admin/users` directory | Returns users with search and role filter for Administrator | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
-| **API-18** | API | AC-17, FR-16 | `POST /api/admin/users` create user | Provisions user with role and initial password (`mustChangePassword: true`) | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
-| **API-19** | API | AC-18, BR-25 | Duplicate email rejection | Returns 409 Conflict when creating/editing user with existing email | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
-| **API-20** | API | AC-19, BR-22 | Self-deactivation prevention | Returns 400 Bad Request if admin attempts to deactivate self | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
-| **API-21** | API | AC-20, BR-23 | Last active admin protection | Returns 400 Bad Request if deactivating the last active administrator | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
+| **API-17** | API | AC-16, FR-15 | `GET /api/admin/users` directory | Returns users with search and role filter for Administrator | `server/tests/lab-03/users-admin.api.test.ts` | **Passed** |
+| **API-18** | API | AC-17, FR-16 | `POST /api/admin/users` create user | Provisions user with role and initial password (`mustChangePassword: true`) | `server/tests/lab-03/users-admin.api.test.ts` | **Passed** |
+| **API-19** | API | AC-18, BR-25 | Duplicate email rejection | Returns 409 Conflict when creating/editing user with existing email | `server/tests/lab-03/users-admin.api.test.ts` | **Passed** |
+| **API-20** | API | AC-19, BR-22 | Self-deactivation prevention | Returns 400 Bad Request if admin attempts to deactivate self | `server/tests/lab-03/users-admin.api.test.ts` | **Passed** |
+| **API-21** | API | AC-20, BR-23 | Last active admin protection | Returns 400 Bad Request if deactivating the last active administrator | `server/tests/lab-03/users-admin.api.test.ts` | **Passed** |
 | **API-22** | API | AC-21, BR-10 | Admin routes blocked for non-Admin | Returns 403 Forbidden when Requester or IT Staff access `/api/admin/*` | `server/tests/lab-03/authorization.api.test.ts` | **Passed** |
 | **UI-01** | UI | AC-01, AC-02 | Login screen rendering & validation | Validates required email/password, shows spinner, renders errors | `client/tests/lab-03/Login.test.tsx` | **Passed** |
 | **UI-02** | UI | AC-03, AC-04 | Change Password screen & checklist | Validates rules dynamically, submits new password, redirects | `client/tests/lab-03/ChangePassword.test.tsx` | **Passed** |
 | **UI-03** | UI | AC-11 | Staff Ticket Queue data grid | Renders queue table, filter chips, search input, and pagination | `client/tests/lab-03/StaffTicketQueue.test.tsx` | Planned |
 | **UI-04** | UI | AC-13, AC-14 | Staff Ticket Detail operational panel | Handles claim, reassign dropdown, IT Priority selector, status update | `client/tests/lab-03/StaffTicketDetail.test.tsx` | Planned |
 | **UI-05** | UI | AC-08, AC-10 | Public Comments vs Internal Notes | Separate tabs, amber background for internal notes, append forms | `client/tests/lab-03/StaffTicketDetail.test.tsx` | Planned |
-| **UI-06** | UI | AC-16, AC-19 | Admin User Management screen | Directory table, role filter, Add User modal, self-deactivation guard | `client/tests/lab-03/UserManagement.test.tsx` | Planned |
+| **UI-06** | UI | AC-16, AC-19 | Admin User Management screen | Directory table, role filter, Add User modal, self-deactivation guard | `client/tests/lab-03/UserManagement.test.tsx` | **Passed** |
 | **E2E-01** | E2E | AC-01, FR-03 | Full Authentication & Logout flow | Login with valid credentials, verify navbar identity, logout cleanly | `e2e/lab-03/authentication.spec.ts` | Planned |
 | **E2E-02** | E2E | AC-03, AC-04 | Mandatory first-login password change | Initial password prompts change screen; new password enters app | `e2e/lab-03/authentication.spec.ts` | Planned |
 | **E2E-03** | E2E | AC-11, AC-15 | IT Staff operational ticket workflow | Queue discovery, claim ticket, set priority, post notes, resolve ticket | `e2e/lab-03/staff-ticket-flow.spec.ts` | Planned |
@@ -71,11 +71,11 @@ To guarantee the integrity of real authentication, multi-role authorization, IT 
 | **AC-13** | Ticket claim and reassignment to active staff | `API-14`, `UI-04`, `E2E-03` | Planned |
 | **AC-14** | IT Priority management independent of Requested Priority | `API-15`, `UI-04`, `E2E-03` | Planned |
 | **AC-15** | Strict status transition lifecycle enforcement | `UNIT-02`, `API-16`, `UI-04`, `E2E-03` | Planned |
-| **AC-16** | Admin user directory with search and role filter | `API-17`, `UI-06`, `E2E-04` | Planned |
-| **AC-17** | Admin user creation with initial password and forced reset flag | `API-18`, `UI-06`, `E2E-04` | Planned |
-| **AC-18** | Duplicate email rejection on user creation and edit | `API-19`, `UI-06` | Planned |
-| **AC-19** | Admin self-deactivation prevented | `API-20`, `UI-06`, `E2E-04` | Planned |
-| **AC-20** | Last active administrator cannot be deactivated or demoted | `API-21`, `UI-06`, `E2E-04` | Planned |
+| **AC-16** | Admin user directory with search and role filter | `API-17`, `UI-06`, `E2E-04` | **Passed** (API & UI) |
+| **AC-17** | Admin user creation with initial password and forced reset flag | `API-18`, `UI-06`, `E2E-04` | **Passed** (API & UI) |
+| **AC-18** | Duplicate email rejection on user creation and edit | `API-19`, `UI-06` | **Passed** |
+| **AC-19** | Admin self-deactivation prevented | `API-20`, `UI-06`, `E2E-04` | **Passed** (API & UI) |
+| **AC-20** | Last active administrator cannot be deactivated or demoted | `API-21`, `UI-06`, `E2E-04` | **Passed** (API & UI) |
 | **AC-21** | Admin endpoints strictly forbidden for Requester and IT Staff | `API-22` | **Passed** |
 
 ---
