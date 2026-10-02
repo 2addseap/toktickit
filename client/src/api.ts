@@ -452,3 +452,99 @@ export async function resetAdminUserPassword(id: number, newInitialPassword: str
   return data;
 }
 
+// ---------------------------------------------------------------------------
+// Lab 3 — Issue 4: IT Staff Ticket Queue API
+// ---------------------------------------------------------------------------
+
+export interface StaffAssignee {
+  id: number;
+  name: string;
+  email: string;
+  role: "IT_STAFF" | "ADMINISTRATOR";
+  department?: string | null;
+}
+
+export interface StaffTicket {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  description: string;
+  requestedPriority: string;
+  itPriority: string;
+  status: string;
+  resolvedIndicated: boolean;
+  resolvedIndicatedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  requester?: {
+    id: number;
+    name: string;
+    email: string;
+    department?: string | null;
+  };
+  assignedTo?: StaffAssignee | null;
+  category?: Category;
+  relatedSystem?: RelatedSystem;
+  attachmentCount: number;
+}
+
+export interface PaginatedStaffTickets {
+  data: StaffTicket[];
+  pagination: PaginationMetadata;
+}
+
+export interface StaffTicketQueryParams {
+  search?: string;
+  status?: string;
+  priority?: string;
+  assignedTo?: string;
+  categoryId?: number;
+  sortBy?: "createdAt" | "ticketNumber" | "itPriority" | "status" | "updatedAt";
+  sortOrder?: "asc" | "desc";
+  page?: number;
+  pageSize?: number;
+}
+
+export async function getStaffTickets(params?: StaffTicketQueryParams): Promise<PaginatedStaffTickets> {
+  const token = getToken();
+  const searchParams = new URLSearchParams();
+
+  if (params?.search) searchParams.append("search", params.search);
+  if (params?.status) searchParams.append("status", params.status);
+  if (params?.priority) searchParams.append("priority", params.priority);
+  if (params?.assignedTo) searchParams.append("assignedTo", params.assignedTo);
+  if (params?.categoryId) searchParams.append("categoryId", String(params.categoryId));
+  if (params?.sortBy) searchParams.append("sortBy", params.sortBy);
+  if (params?.sortOrder) searchParams.append("sortOrder", params.sortOrder);
+  if (params?.page) searchParams.append("page", String(params.page));
+  if (params?.pageSize) searchParams.append("pageSize", String(params.pageSize));
+
+  const query = searchParams.toString() ? `?${searchParams.toString()}` : "";
+  const res = await fetch(`${API_URL}/api/staff/tickets${query}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to retrieve staff ticket queue.");
+  }
+  return data;
+}
+
+export async function getStaffAssignees(): Promise<StaffAssignee[]> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/staff/assignees`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch assignees.");
+  }
+  return data;
+}
+
