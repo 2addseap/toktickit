@@ -2,8 +2,8 @@ import { useRequester } from "../context/RequesterContext.js";
 import { useAuth } from "../context/AuthContext.js";
 
 interface NavbarProps {
-  currentTab: "my-tickets" | "create-ticket" | "user-management";
-  onTabChange: (tab: "my-tickets" | "create-ticket" | "user-management") => void;
+  currentTab: "my-tickets" | "create-ticket" | "user-management" | "ticket-queue";
+  onTabChange: (tab: "my-tickets" | "create-ticket" | "user-management" | "ticket-queue") => void;
 }
 
 export default function Navbar({ currentTab, onTabChange }: NavbarProps) {
@@ -55,6 +55,16 @@ export default function Navbar({ currentTab, onTabChange }: NavbarProps) {
             >
               ➕ Create Ticket
             </button>
+            {(currentUser?.role === "IT_STAFF" || currentUser?.role === "ADMINISTRATOR") && (
+              <button
+                type="button"
+                className={`btn btn-link zen-nav-link ${currentTab === "ticket-queue" ? "active" : ""}`}
+                onClick={() => onTabChange("ticket-queue")}
+                data-testid="nav-ticket-queue"
+              >
+                🎫 Ticket Queue
+              </button>
+            )}
             {currentUser?.role === "ADMINISTRATOR" && (
               <button
                 type="button"

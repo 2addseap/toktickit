@@ -1043,4 +1043,150 @@ app.post("/api/admin/users/:id/reset-password", authenticate, requireRole("ADMIN
   }
 });
 
+// ---------------------------------------------------------------------------
+// Lab 3 — Issue 4: IT Staff Shared Ticket Queue & Workflow Endpoints
+// ---------------------------------------------------------------------------
+
+const ALLOWED_STAFF_SORT_FIELDS = ["createdAt", "ticketNumber", "itPriority", "status", "updatedAt"];
+
+// 1. GET /api/staff/tickets — Shared ticket queue with multi-dimensional filtering, search, sorting & pagination (AC-11, FR-09)
+app.get("/api/staff/tickets", authenticate, requireRole("IT_STAFF", "ADMINISTRATOR"), async (req: Request, res: Response) => {
+  try {
+    const prisma = getPrisma();
+    const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+    const categoryId = req.query.categoryId ? Number(req.query.categoryId) : undefined;
+    const priority = typeof req.query.priority === "string" ? req.query.priority.toUpperCase() : undefined;
+    const status = typeof req.query.status === "string" ? req.query.status.trim() : undefined;
+    const assignedTo = req.query.assignedTo;
+
+    const sortBy = typeof req.query.sortBy === "string" && ALLOWED_STAFF_SORT_FIELDS.includes(req.query.sortBy)
+      ? req.query.sortBy
+      : "createdAt";
+    const sortOrder = req.query.sortOrder === "asc" ? "asc" : "desc";
+
+    const page = Math.max(1, req.query.page ? Number(req.query.page) : 1);
+    const pageSize = Math.min(50, Math.max(1, req.query.pageSize ? Number(req.query.pageSize) : 10));
+
+    const where: Prisma.TicketWhereInput = {};
+
+    if (search) {
+      where.OR = [
+        { ticketNumber: { contains: search, mode: "insensitive" } },
+        { summary: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (priority && ["LOW", "MEDIUM", "HIGH", "URGENT"].includes(priority)) {
+      where.itPriority = priority;
+    }
+
+    if (assignedTo === "unassigned") {
+      where.assignedToId = null;
+    } else if (assignedTo && !isNaN(Number(assignedTo))) {
+      where.assignedToId = Number(assignedTo);
+    }
+
+    if (categoryId && !isNaN(categoryId)) {
+      where.categoryId = categoryId;
+    }
+
+    const totalItems = await prisma.ticket.count({ where });
+    const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+    const tickets = await prisma.ticket.findMany({
+      where,
+      orderBy: { [sortBy]: sortOrder },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: {
+        requester: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            department: true,
+          },
+        },
+        assignedTo: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+        category: { select: { id: true, name: true } },
+        relatedSystem: { select: { id: true, name: true } },
+        _count: {
+          select: {
+            attachments: { where: { isRemoved: false } },
+          },
+        },
+      },
+    });
+
+    const data = tickets.map((t) => ({
+      id: t.id,
+      ticketNumber: t.ticketNumber,
+      summary: t.summary,
+      description: t.description,
+      requestedPriority: t.requestedPriority,
+      itPriority: t.itPriority,
+      status: t.status,
+      resolvedIndicated: t.resolvedIndicated,
+      resolvedIndicatedAt: t.resolvedIndicatedAt,
+      createdAt: t.createdAt,
+      updatedAt: t.updatedAt,
+      requester: t.requester,
+      assignedTo: t.assignedTo,
+      category: t.category,
+      relatedSystem: t.relatedSystem,
+      attachmentCount: t._count.attachments,
+    }));
+
+    res.status(200).json({
+      data,
+      pagination: {
+        page,
+        pageSize,
+        totalItems,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
+  } catch (err) {
+    console.error("Failed to query staff ticket queue:", err);
+    res.status(500).json({ error: "Failed to retrieve ticket queue." });
+  }
+});
+
+// 2. GET /api/staff/assignees — Active staff members eligible for ticket assignment (BR-12)
+app.get("/api/staff/assignees", authenticate, requireRole("IT_STAFF", "ADMINISTRATOR"), async (_req: Request, res: Response) => {
+  try {
+    const staff = await getPrisma().user.findMany({
+      where: {
+        role: { in: ["IT_STAFF", "ADMINISTRATOR"] },
+        isActive: true,
+      },
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        department: true,
+      },
+    });
+    res.status(200).json(staff);
+  } catch (err) {
+    console.error("Failed to fetch assignable staff:", err);
+    res.status(500).json({ error: "Failed to fetch staff members." });
+  }
+});
+
 export default app;

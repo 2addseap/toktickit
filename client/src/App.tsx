@@ -9,11 +9,12 @@ import TicketDetail from "./components/TicketDetail.js";
 import Login from "./components/Login.js";
 import ChangePassword from "./components/ChangePassword.js";
 import UserManagement from "./components/UserManagement.js";
+import StaffTicketQueue from "./components/StaffTicketQueue.js";
 
 function MainContent() {
   const { currentUser, isLoading, isAuthenticated } = useAuth();
   const { currentRequester, isSelectorOpen } = useRequester();
-  const [currentTab, setCurrentTab] = useState<"my-tickets" | "create-ticket" | "user-management">("my-tickets");
+  const [currentTab, setCurrentTab] = useState<"my-tickets" | "create-ticket" | "user-management" | "ticket-queue">("my-tickets");
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
 
   // Reset selected ticket if user or requester changes
@@ -78,6 +79,12 @@ function MainContent() {
                   // Stay on confirmation screen or allow navigating to my-tickets
                 }}
                 onCancel={() => setCurrentTab("my-tickets")}
+              />
+            )}
+
+            {currentTab === "ticket-queue" && (currentUser?.role === "IT_STAFF" || currentUser?.role === "ADMINISTRATOR") && (
+              <StaffTicketQueue
+                onSelectTicket={(ticketId) => setSelectedTicketId(ticketId)}
               />
             )}
 

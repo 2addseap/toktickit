@@ -28,8 +28,8 @@ To guarantee the integrity of real authentication, multi-role authorization, IT 
 | **API-09** | API | AC-08, BR-17 | Public Comments access | Requester owner and IT Staff can retrieve and post public comments | `server/tests/lab-03/comments-notes.api.test.ts` | Planned |
 | **API-10** | API | AC-09, BR-18 | Internal Notes blocked for Requester | Returns 403 Forbidden; zero note content leaked to Requester | `server/tests/lab-03/comments-notes.api.test.ts` | Planned |
 | **API-11** | API | AC-10, BR-18 | Internal Notes for IT Staff / Admin | Returns 200/201; notes saved and retrieved with author attribution | `server/tests/lab-03/comments-notes.api.test.ts` | Planned |
-| **API-12** | API | AC-11, FR-09 | `GET /api/staff/tickets` queue query | Supports search, status/priority filters, sort, and pagination | `server/tests/lab-03/staff-queue.api.test.ts` | Planned |
-| **API-13** | API | AC-12, BR-10 | Ticket Queue blocked for Requester | Returns 403 Forbidden when Requester accesses `/api/staff/tickets` | `server/tests/lab-03/authorization.api.test.ts` | Planned |
+| **API-12** | API | AC-11, FR-09 | `GET /api/staff/tickets` queue query | Supports search, status/priority filters, sort, and pagination | `server/tests/lab-03/staff-queue.api.test.ts` | **Passed** |
+| **API-13** | API | AC-12, BR-10 | Ticket Queue blocked for Requester | Returns 403 Forbidden when Requester accesses `/api/staff/tickets` | `server/tests/lab-03/staff-queue.api.test.ts` | **Passed** |
 | **API-14** | API | AC-13, BR-12 | `PATCH /api/staff/tickets/:id/assign` | Assigns ticket to active IT Staff/Admin; rejects non-staff assignees | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
 | **API-15** | API | AC-14, BR-13 | `PATCH /api/staff/tickets/:id/priority` | Updates operational `itPriority` while keeping `requestedPriority` intact | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
 | **API-16** | API | AC-15, BR-16 | `PATCH /api/staff/tickets/:id/status` | Enforces transition matrix; rejects disallowed jumps with 400 | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
@@ -41,7 +41,7 @@ To guarantee the integrity of real authentication, multi-role authorization, IT 
 | **API-22** | API | AC-21, BR-10 | Admin routes blocked for non-Admin | Returns 403 Forbidden when Requester or IT Staff access `/api/admin/*` | `server/tests/lab-03/authorization.api.test.ts` | **Passed** |
 | **UI-01** | UI | AC-01, AC-02 | Login screen rendering & validation | Validates required email/password, shows spinner, renders errors | `client/tests/lab-03/Login.test.tsx` | **Passed** |
 | **UI-02** | UI | AC-03, AC-04 | Change Password screen & checklist | Validates rules dynamically, submits new password, redirects | `client/tests/lab-03/ChangePassword.test.tsx` | **Passed** |
-| **UI-03** | UI | AC-11 | Staff Ticket Queue data grid | Renders queue table, filter chips, search input, and pagination | `client/tests/lab-03/StaffTicketQueue.test.tsx` | Planned |
+| **UI-03** | UI | AC-11 | Staff Ticket Queue data grid | Renders queue table, filter chips, search input, and pagination | `client/tests/lab-03/StaffTicketQueue.test.tsx` | **Passed** |
 | **UI-04** | UI | AC-13, AC-14 | Staff Ticket Detail operational panel | Handles claim, reassign dropdown, IT Priority selector, status update | `client/tests/lab-03/StaffTicketDetail.test.tsx` | Planned |
 | **UI-05** | UI | AC-08, AC-10 | Public Comments vs Internal Notes | Separate tabs, amber background for internal notes, append forms | `client/tests/lab-03/StaffTicketDetail.test.tsx` | Planned |
 | **UI-06** | UI | AC-16, AC-19 | Admin User Management screen | Directory table, role filter, Add User modal, self-deactivation guard | `client/tests/lab-03/UserManagement.test.tsx` | **Passed** |
@@ -66,8 +66,8 @@ To guarantee the integrity of real authentication, multi-role authorization, IT 
 | **AC-08** | Public Comments accessible to Requester owner, IT Staff, and Admin | `API-09`, `UI-05` | Planned |
 | **AC-09** | Internal Notes strictly forbidden and hidden from Requester | `API-10` | Planned |
 | **AC-10** | Internal Notes accessible only to IT Staff and Admin | `API-11`, `UI-05`, `E2E-03` | Planned |
-| **AC-11** | IT Staff Ticket Queue with search, filters, sort, and pagination | `API-12`, `UI-03`, `E2E-03` | Planned |
-| **AC-12** | Ticket Queue forbidden for Requester role (403 Forbidden) | `API-13` | Planned |
+| **AC-11** | IT Staff Ticket Queue with search, filters, sort, and pagination | `API-12`, `UI-03`, `E2E-03` | **Passed** (API & UI) |
+| **AC-12** | Ticket Queue forbidden for Requester role (403 Forbidden) | `API-13` | **Passed** |
 | **AC-13** | Ticket claim and reassignment to active staff | `API-14`, `UI-04`, `E2E-03` | Planned |
 | **AC-14** | IT Priority management independent of Requested Priority | `API-15`, `UI-04`, `E2E-03` | Planned |
 | **AC-15** | Strict status transition lifecycle enforcement | `UNIT-02`, `API-16`, `UI-04`, `E2E-03` | Planned |
