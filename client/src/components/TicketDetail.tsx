@@ -4,8 +4,12 @@ import {
   uploadAttachment,
   downloadAttachment,
   softRemoveAttachment,
+  indicateTicketResolution,
+  getPublicComments,
+  postPublicComment,
   Ticket,
   Attachment,
+  TicketComment,
 } from "../api.js";
 import { useRequester } from "../context/RequesterContext.js";
 
@@ -23,6 +27,15 @@ export default function TicketDetail({ ticketId, onBack }: TicketDetailProps) {
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Lab 3: Problem Appears Resolved & Public Comments state
+  const [showResolveModal, setShowResolveModal] = useState<boolean>(false);
+  const [resolving, setResolving] = useState<boolean>(false);
+  const [resolveError, setResolveError] = useState<string>("");
+  const [comments, setComments] = useState<TicketComment[]>([]);
+  const [newComment, setNewComment] = useState<string>("");
+  const [commentSubmitting, setCommentSubmitting] = useState<boolean>(false);
+  const [commentError, setCommentError] = useState<string>("");
 
   // Attachment upload state
   const [uploading, setUploading] = useState<boolean>(false);
@@ -45,6 +58,12 @@ export default function TicketDetail({ ticketId, onBack }: TicketDetailProps) {
     try {
       const data = await getTicketDetail(ticketId, currentRequester.id);
       setTicket(data);
+      try {
+        const comms = await getPublicComments(ticketId);
+        setComments(comms);
+      } catch {
+        // Safe fallback if comments endpoint is not mocked or available
+      }
     } catch (err) {
       console.error("Failed to load ticket detail:", err);
       setError(
@@ -247,12 +266,26 @@ export default function TicketDetail({ ticketId, onBack }: TicketDetailProps) {
       <div className="zen-card p-4 mb-4">
         <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-3 pb-3 border-bottom">
           <div>
-            <div className="d-flex align-items-center gap-2 mb-1">
+            <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">
               <span className="fs-4 fw-bold" style={{ color: "var(--color-primary-green)" }}>
                 {ticket.ticketNumber}
               </span>
               {renderPriorityBadge(ticket.requestedPriority)}
               {renderStatusBadge(ticket.status)}
+              {ticket.resolvedIndicated ? (
+                <span data-testid="resolved-indicated-badge" className="badge bg-success-subtle text-success border border-success-subtle small">
+                  ✓ You indicated this issue appears resolved
+                </span>
+              ) : ["Open", "In Progress", "Waiting for Requester"].includes(ticket.status) ? (
+                <button
+                  type="button"
+                  data-testid="resolve-indication-btn"
+                  className="btn btn-sm btn-outline-success"
+                  onClick={() => setShowResolveModal(true)}
+                >
+                  ✓ Problem Appears Resolved
+                </button>
+              ) : null}
             </div>
             <h1 className="h4 fw-bold mb-0">{ticket.summary}</h1>
           </div>
@@ -437,6 +470,149 @@ export default function TicketDetail({ ticketId, onBack }: TicketDetailProps) {
           </div>
         )}
       </div>
+
+      {/* Public Comments Section (Lab 3 — AC-08, UI-spec 3.5) */}
+      <div className="zen-card p-4 mb-4" data-testid="requester-comments-section">
+        <h2 className="h5 fw-bold mb-3" style={{ color: "var(--color-primary-green)" }}>
+          💬 Conversation with IT Support ({comments.length})
+        </h2>
+
+        {/* Existing Comments */}
+        <div className="d-flex flex-column gap-3 mb-4" data-testid="requester-comments-list">
+          {comments.length === 0 ? (
+            <p className="text-muted small fst-italic mb-0">No comments exchanged yet.</p>
+          ) : (
+            comments.map((c) => (
+              <div key={c.id} className="p-3 comment-item-public" data-testid={`comment-${c.id}`}>
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <div className="d-flex align-items-center gap-2">
+                    <strong className="small">{c.author.name}</strong>
+                    <span className="badge-role-user">{c.author.role}</span>
+                  </div>
+                  <span className="text-muted small">{formatDate(c.createdAt)}</span>
+                </div>
+                <div className="small text-break" style={{ whiteSpace: "pre-wrap" }}>
+                  {c.body}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Add Comment Form */}
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const trimmed = newComment.trim();
+            if (!trimmed || !ticket) return;
+            setCommentSubmitting(true);
+            setCommentError("");
+            try {
+              const added = await postPublicComment(ticket.id, trimmed);
+              setComments((prev) => [...prev, added]);
+              setNewComment("");
+            } catch (err) {
+              setCommentError(err instanceof Error ? err.message : "Failed to post comment.");
+            } finally {
+              setCommentSubmitting(false);
+            }
+          }}
+        >
+          <div className="mb-2">
+            <textarea
+              data-testid="requester-comment-input"
+              className="form-control"
+              rows={3}
+              placeholder="Type a message or response to IT Support..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              disabled={commentSubmitting}
+            />
+          </div>
+          {commentError && (
+            <div className="alert alert-danger p-2 small mb-2">{commentError}</div>
+          )}
+          <button
+            type="submit"
+            data-testid="post-comment-btn"
+            className="btn btn-zen-primary btn-sm px-3"
+            disabled={commentSubmitting || !newComment.trim()}
+          >
+            {commentSubmitting ? "Posting..." : "Post Comment"}
+          </button>
+        </form>
+      </div>
+
+      {/* Problem Appears Resolved Confirmation Modal (AC-07) */}
+      {showResolveModal && (
+        <div
+          className="modal fade show d-block"
+          tabIndex={-1}
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content zen-card shadow">
+              <div className="modal-header border-bottom">
+                <h5 className="modal-title fw-bold" style={{ color: "var(--color-primary-green)" }}>
+                  ✓ Mark Problem as Appears Resolved
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowResolveModal(false)}
+                  disabled={resolving}
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p className="mb-2">
+                  Are you satisfied that this issue has been resolved?
+                </p>
+                <p className="small text-muted mb-0">
+                  This notifies IT Staff that your issue is resolved so they can complete the ticket closure.
+                </p>
+                {resolveError && (
+                  <div className="alert alert-danger p-2 small mt-3 mb-0">{resolveError}</div>
+                )}
+              </div>
+              <div className="modal-footer border-top">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowResolveModal(false)}
+                  disabled={resolving}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-zen-primary"
+                  onClick={async () => {
+                    if (!ticket) return;
+                    setResolving(true);
+                    setResolveError("");
+                    try {
+                      await indicateTicketResolution(ticket.id, true);
+                      setTicket((prev) => (prev ? { ...prev, resolvedIndicated: true, resolvedIndicatedAt: new Date().toISOString() } : null));
+                      setShowResolveModal(false);
+                    } catch (err) {
+                      setResolveError(err instanceof Error ? err.message : "Failed to submit resolution indication.");
+                    } finally {
+                      setResolving(false);
+                    }
+                  }}
+                  disabled={resolving}
+                  data-testid="confirm-resolve-btn"
+                >
+                  {resolving ? "Submitting..." : "Yes, Mark as Resolved"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Soft-Removal Confirmation Modal */}
       {removingAttachment && (

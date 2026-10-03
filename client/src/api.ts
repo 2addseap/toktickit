@@ -8,6 +8,38 @@ export interface RequesterUser {
   isActive: boolean;
 }
 
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
+  department?: string | null;
+  isActive?: boolean;
+  mustChangePassword: boolean;
+  createdAt?: string;
+}
+
+export function getToken(): string | null {
+  return localStorage.getItem("toktickit_auth_token");
+}
+
+export function setToken(token: string): void {
+  localStorage.setItem("toktickit_auth_token", token);
+}
+
+export function clearToken(): void {
+  localStorage.removeItem("toktickit_auth_token");
+}
+
+export function getAuthHeaders(): Record<string, string> {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 export interface Category {
   id: number;
   name: string;
@@ -47,6 +79,15 @@ export interface Ticket {
   requestedPriority: string;
   itPriority?: string | null;
   status: string;
+  resolvedIndicated?: boolean;
+  resolvedIndicatedAt?: string | null;
+  assignedToId?: number | null;
+  assignedTo?: {
+    id: number;
+    name: string;
+    email: string;
+    role: "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
+  } | null;
   createdAt: string;
   updatedAt: string;
   attachments?: Attachment[];
@@ -175,12 +216,17 @@ export async function getTickets(
 
 export async function getTicketDetail(
   ticketId: number,
-  requesterId: number
+  requesterId?: number
 ): Promise<Ticket> {
+  const headers: Record<string, string> = {
+    ...getAuthHeaders(),
+  };
+  if (requesterId) {
+    headers["x-requester-id"] = String(requesterId);
+  }
+
   const res = await fetch(`${API_URL}/api/tickets/${ticketId}`, {
-    headers: {
-      "x-requester-id": String(requesterId),
-    },
+    headers,
   });
 
   if (!res.ok) {
@@ -217,13 +263,18 @@ export async function uploadAttachment(
 
 export async function downloadAttachment(
   attachmentId: number,
-  requesterId: number,
-  fileName: string
+  requesterId?: number,
+  fileName?: string
 ): Promise<void> {
+  const headers: Record<string, string> = {
+    ...getAuthHeaders(),
+  };
+  if (requesterId) {
+    headers["x-requester-id"] = String(requesterId);
+  }
+
   const res = await fetch(`${API_URL}/api/attachments/${attachmentId}/download`, {
-    headers: {
-      "x-requester-id": String(requesterId),
-    },
+    headers,
   });
 
   if (!res.ok) {
@@ -235,7 +286,7 @@ export async function downloadAttachment(
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = fileName;
+  a.download = fileName || "attachment";
   document.body.appendChild(a);
   a.click();
   window.URL.revokeObjectURL(url);
@@ -261,6 +312,418 @@ export async function softRemoveAttachment(
     throw new Error(data.message || data.error || "Failed to remove attachment");
   }
 
+  return data;
+}
+
+export async function login(email: string, password: string): Promise<{ token: string; user: User }> {
+  const res = await fetch(`${API_URL}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Login failed.");
+  }
+
+  setToken(data.token);
+  return data;
+}
+
+export async function logout(): Promise<void> {
+  try {
+    await fetch(`${API_URL}/api/auth/logout`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
+  } finally {
+    clearToken();
+  }
+}
+
+export async function getMe(): Promise<User> {
+  const token = getToken();
+  if (!token) throw new Error("No authentication token found.");
+
+  const res = await fetch(`${API_URL}/api/auth/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    clearToken();
+    throw new Error(data.message || "Failed to retrieve user profile.");
+  }
+
+  return data;
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword: string
+): Promise<{ message: string; user: User }> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/auth/change-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to update password.");
+  }
+
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Lab 3 — Issue 3: Admin User Management API
+// ---------------------------------------------------------------------------
+
+export async function getAdminUsers(search?: string, role?: string): Promise<User[]> {
+  const token = getToken();
+  const params = new URLSearchParams();
+  if (search) params.append("search", search);
+  if (role) params.append("role", role);
+
+  const queryString = params.toString() ? `?${params.toString()}` : "";
+  const res = await fetch(`${API_URL}/api/admin/users${queryString}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch admin users.");
+  }
+  return data;
+}
+
+export async function createAdminUser(userData: {
+  name: string;
+  email: string;
+  role: string;
+  department?: string;
+  isActive?: boolean;
+  initialPassword: string;
+}): Promise<User> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/admin/users`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(userData),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to create user.");
+  }
+  return data;
+}
+
+export async function updateAdminUser(id: number, data: Partial<User>): Promise<User> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/admin/users/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const resData = await res.json();
+  if (!res.ok) {
+    throw new Error(resData.message || resData.error || "Failed to update user.");
+  }
+  return resData;
+}
+
+export async function resetAdminUserPassword(id: number, newInitialPassword: string): Promise<{ message: string }> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/admin/users/${id}/reset-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ newInitialPassword }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to reset password.");
+  }
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Lab 3 — Issue 4: IT Staff Ticket Queue API
+// ---------------------------------------------------------------------------
+
+export interface StaffAssignee {
+  id: number;
+  name: string;
+  email: string;
+  role: "IT_STAFF" | "ADMINISTRATOR";
+  department?: string | null;
+}
+
+export interface StaffTicket {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  description: string;
+  requestedPriority: string;
+  itPriority: string;
+  status: string;
+  resolvedIndicated: boolean;
+  resolvedIndicatedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  requester?: {
+    id: number;
+    name: string;
+    email: string;
+    department?: string | null;
+  };
+  assignedTo?: StaffAssignee | null;
+  category?: Category;
+  relatedSystem?: RelatedSystem;
+  attachmentCount: number;
+}
+
+export interface PaginatedStaffTickets {
+  data: StaffTicket[];
+  pagination: PaginationMetadata;
+}
+
+export interface StaffTicketQueryParams {
+  search?: string;
+  status?: string;
+  priority?: string;
+  assignedTo?: string;
+  categoryId?: number;
+  sortBy?: "createdAt" | "ticketNumber" | "itPriority" | "status" | "updatedAt";
+  sortOrder?: "asc" | "desc";
+  page?: number;
+  pageSize?: number;
+}
+
+export async function getStaffTickets(params?: StaffTicketQueryParams): Promise<PaginatedStaffTickets> {
+  const token = getToken();
+  const searchParams = new URLSearchParams();
+
+  if (params?.search) searchParams.append("search", params.search);
+  if (params?.status) searchParams.append("status", params.status);
+  if (params?.priority) searchParams.append("priority", params.priority);
+  if (params?.assignedTo) searchParams.append("assignedTo", params.assignedTo);
+  if (params?.categoryId) searchParams.append("categoryId", String(params.categoryId));
+  if (params?.sortBy) searchParams.append("sortBy", params.sortBy);
+  if (params?.sortOrder) searchParams.append("sortOrder", params.sortOrder);
+  if (params?.page) searchParams.append("page", String(params.page));
+  if (params?.pageSize) searchParams.append("pageSize", String(params.pageSize));
+
+  const query = searchParams.toString() ? `?${searchParams.toString()}` : "";
+  const res = await fetch(`${API_URL}/api/staff/tickets${query}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to retrieve staff ticket queue.");
+  }
+  return data;
+}
+
+export async function getStaffAssignees(): Promise<StaffAssignee[]> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/staff/assignees`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch assignees.");
+  }
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Lab 3 — Issue 5: Staff Ticket Operational Detail & Collaboration API
+// ---------------------------------------------------------------------------
+
+export interface TicketComment {
+  id: number;
+  ticketId: number;
+  body: string;
+  type: "PUBLIC" | "INTERNAL";
+  createdAt: string;
+  author: {
+    id: number;
+    name: string;
+    role: "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
+  };
+}
+
+export async function assignTicket(ticketId: number, assignedToId: number | null): Promise<StaffTicket> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/assign`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ assignedToId }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to update ticket assignment.");
+  }
+  return data;
+}
+
+export async function updateTicketPriority(ticketId: number, itPriority: string): Promise<StaffTicket> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/priority`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ itPriority }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to update IT priority.");
+  }
+  return data;
+}
+
+export async function updateTicketStatus(ticketId: number, status: string): Promise<StaffTicket> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/status`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ status }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to update ticket status.");
+  }
+  return data;
+}
+
+export async function indicateTicketResolution(ticketId: number, resolved: boolean = true): Promise<{
+  id: number;
+  ticketNumber: string;
+  resolvedIndicated: boolean;
+  resolvedIndicatedAt: string | null;
+}> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/resolve-indication`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ resolved }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to submit resolution indication.");
+  }
+  return data;
+}
+
+export async function getPublicComments(ticketId: number): Promise<TicketComment[]> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/comments`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to retrieve public comments.");
+  }
+  return data;
+}
+
+export async function postPublicComment(ticketId: number, body: string): Promise<TicketComment> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/comments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ body }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to post comment.");
+  }
+  return data;
+}
+
+export async function getInternalNotes(ticketId: number): Promise<TicketComment[]> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/notes`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to retrieve internal notes.");
+  }
+  return data;
+}
+
+export async function postInternalNote(ticketId: number, body: string): Promise<TicketComment> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/notes`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ body }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to post internal note.");
+  }
   return data;
 }
 
