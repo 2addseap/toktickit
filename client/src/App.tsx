@@ -11,11 +11,13 @@ import ChangePassword from "./components/ChangePassword.js";
 import UserManagement from "./components/UserManagement.js";
 import StaffTicketQueue from "./components/StaffTicketQueue.js";
 import StaffTicketDetail from "./components/StaffTicketDetail.js";
+import RequesterDashboard from "./components/RequesterDashboard.js";
+import StaffDashboard from "./components/StaffDashboard.js";
 
 function MainContent() {
   const { currentUser, isLoading, isAuthenticated } = useAuth();
   const { currentRequester, isSelectorOpen } = useRequester();
-  const [currentTab, setCurrentTab] = useState<"my-tickets" | "create-ticket" | "user-management" | "ticket-queue">("my-tickets");
+  const [currentTab, setCurrentTab] = useState<"dashboard" | "my-tickets" | "create-ticket" | "user-management" | "ticket-queue">("dashboard");
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
 
   // Reset selected ticket if user or requester changes
@@ -74,6 +76,23 @@ function MainContent() {
           )
         ) : (
           <>
+            {currentTab === "dashboard" && (
+              currentUser?.role === "IT_STAFF" || currentUser?.role === "ADMINISTRATOR" ? (
+                <StaffDashboard
+                  onSelectTicket={(ticketId) => setSelectedTicketId(ticketId)}
+                  onNavigateToQueue={() => setCurrentTab("ticket-queue")}
+                  onCreateTicket={() => setCurrentTab("create-ticket")}
+                  onNavigateToUserManagement={() => setCurrentTab("user-management")}
+                />
+              ) : (
+                <RequesterDashboard
+                  onCreateTicket={() => setCurrentTab("create-ticket")}
+                  onSelectTicket={(ticketId) => setSelectedTicketId(ticketId)}
+                  onViewAllTickets={() => setCurrentTab("my-tickets")}
+                />
+              )
+            )}
+
             {currentTab === "my-tickets" && (
               <MyTickets
                 onCreateTicket={() => setCurrentTab("create-ticket")}

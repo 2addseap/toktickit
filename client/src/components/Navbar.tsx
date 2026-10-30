@@ -2,8 +2,8 @@ import { useRequester } from "../context/RequesterContext.js";
 import { useAuth } from "../context/AuthContext.js";
 
 interface NavbarProps {
-  currentTab: "my-tickets" | "create-ticket" | "user-management" | "ticket-queue";
-  onTabChange: (tab: "my-tickets" | "create-ticket" | "user-management" | "ticket-queue") => void;
+  currentTab: "dashboard" | "my-tickets" | "create-ticket" | "user-management" | "ticket-queue";
+  onTabChange: (tab: "dashboard" | "my-tickets" | "create-ticket" | "user-management" | "ticket-queue") => void;
 }
 
 export default function Navbar({ currentTab, onTabChange }: NavbarProps) {
@@ -41,6 +41,14 @@ export default function Navbar({ currentTab, onTabChange }: NavbarProps) {
         {/* Navigation Tabs */}
         {(currentUser || currentRequester) && (
           <nav className="d-flex align-items-center gap-2">
+            <button
+              type="button"
+              className={`btn btn-link zen-nav-link ${currentTab === "dashboard" ? "active" : ""}`}
+              onClick={() => onTabChange("dashboard")}
+              data-testid="nav-dashboard"
+            >
+              📊 Dashboard
+            </button>
             <button
               type="button"
               className={`btn btn-link zen-nav-link ${currentTab === "my-tickets" ? "active" : ""}`}
