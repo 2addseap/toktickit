@@ -16,14 +16,14 @@ To guarantee the reliability, security, and regression resilience of Lab 4, test
 | Test ID | Level | Requirement / AC | What It Tests | Expected Result | Automated Test File | Planned Status |
 |---|---|---|---|---|---|---|
 | **UNIT-01** | Unit | BR-08, AC-10 | Status transition matrix validator | Permits valid transitions; rejects invalid jumps with detailed error | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| **UNIT-02** | Unit | BR-04, AC-05 | Follow-up note co-dependency | Rejects `followUpRequired=true` with empty note; allows when false | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| **API-01** | API | AC-01, FR-02 | `POST /api/tickets/:id/actions` by IT Staff | Persists Action Taken with `performedById` bound to caller, returns 201 | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| **API-02** | API | AC-02, BR-03 | `POST /api/tickets/:id/actions` by Requester | Returns 403 Forbidden; prevents non-staff from logging actions | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| **API-03** | API | AC-03, FR-04 | `GET /api/tickets/:id/actions` for owned ticket | Requester successfully reads all Actions Taken on owned ticket | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| **API-04** | API | AC-04, BR-03 | `GET /api/tickets/:id/actions` for other's ticket | Requester receives 403 Forbidden; zero action data leaked | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| **API-05** | API | AC-06, BR-02 | Collaborative execution by multiple staff | Staff B logs Action Taken on ticket owned by Staff A; both preserved | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| **API-06** | API | AC-07, FR-03 | `PATCH /api/actions/:id` update action | Updates description, result, follow-up flags; returns 200 | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| **API-07** | API | AC-08, FR-09 | Concurrency conflict on Action update | Stale `clientUpdatedAt` returns 409 Conflict | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| **UNIT-02** | Unit | BR-04, AC-05 | Follow-up note co-dependency | Rejects `followUpRequired=true` with empty note; allows when false | `server/tests/lab-04/actions-taken.api.test.ts` | **Passed** |
+| **API-01** | API | AC-01, FR-02 | `POST /api/tickets/:id/actions` by IT Staff | Persists Action Taken with `performedById` bound to caller, returns 201 | `server/tests/lab-04/actions-taken.api.test.ts` | **Passed** |
+| **API-02** | API | AC-02, BR-03 | `POST /api/tickets/:id/actions` by Requester | Returns 403 Forbidden; prevents non-staff from logging actions | `server/tests/lab-04/actions-taken.api.test.ts` | **Passed** |
+| **API-03** | API | AC-03, FR-04 | `GET /api/tickets/:id/actions` for owned ticket | Requester successfully reads all Actions Taken on owned ticket | `server/tests/lab-04/actions-taken.api.test.ts` | **Passed** |
+| **API-04** | API | AC-04, BR-03 | `GET /api/tickets/:id/actions` for other's ticket | Requester receives 403 Forbidden; zero action data leaked | `server/tests/lab-04/actions-taken.api.test.ts` | **Passed** |
+| **API-05** | API | AC-06, BR-02 | Collaborative execution by multiple staff | Staff B logs Action Taken on ticket owned by Staff A; both preserved | `server/tests/lab-04/actions-taken.api.test.ts` | **Passed** |
+| **API-06** | API | AC-07, FR-03 | `PATCH /api/actions/:id` update action | Updates description, result, follow-up flags; returns 200 | `server/tests/lab-04/actions-taken.api.test.ts` | **Passed** |
+| **API-07** | API | AC-08, FR-09 | Concurrency conflict on Action update | Stale `clientUpdatedAt` returns 409 Conflict | `server/tests/lab-04/actions-taken.api.test.ts` | **Passed** |
 | **API-08** | API | AC-09, BR-09 | Permitted status transition to `Resolved` | IT Staff transitions `In Progress` $\rightarrow$ `Resolved`; status updated | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
 | **API-09** | API | AC-10, BR-08 | Illegal status jump rejection | Staff attempting `New` $\rightarrow$ `Closed` receives 400 Bad Request | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
 | **API-10** | API | AC-11, BR-10 | Advisory Requester resolution signal | Sets `resolvedIndicated = true` without altering `ticket.status` | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
@@ -49,14 +49,14 @@ To guarantee the reliability, security, and regression resilience of Lab 4, test
 
 | Acceptance Criterion | Description | Mapped Tests |
 |---|---|---|
-| **AC-01** | Create Action Taken by IT Staff | `API-01`, `UI-01`, `E2E-01` |
-| **AC-02** | Requester Blocked from Creating Action Taken | `API-02` |
-| **AC-03** | Requester View Permitted Actions Taken | `API-03`, `UI-02` |
-| **AC-04** | Requester Blocked from Other's Actions Taken | `API-04`, `UI-02` |
-| **AC-05** | Action Taken Follow-Up Validation | `UNIT-02`, `UI-01` |
-| **AC-06** | Action Taken Collaborative Multi-Staff Execution | `API-05`, `E2E-01` |
-| **AC-07** | Update Existing Action Taken | `API-06` |
-| **AC-08** | Action Taken Concurrency Conflict Handling | `API-07` |
+| **AC-01** | Create Action Taken by IT Staff | `API-01`, `UI-01`, `E2E-01` | **Passed (API)** |
+| **AC-02** | Requester Blocked from Creating Action Taken | `API-02` | **Passed (API)** |
+| **AC-03** | Requester View Permitted Actions Taken | `API-03`, `UI-02` | **Passed (API)** |
+| **AC-04** | Requester Blocked from Other's Actions Taken | `API-04`, `UI-02` | **Passed (API)** |
+| **AC-05** | Action Taken Follow-Up Validation | `UNIT-02`, `UI-01` | **Passed (Unit/API)** |
+| **AC-06** | Action Taken Collaborative Multi-Staff Execution | `API-05`, `E2E-01` | **Passed (API)** |
+| **AC-07** | Update Existing Action Taken | `API-06` | **Passed (API)** |
+| **AC-08** | Action Taken Concurrency Conflict Handling | `API-07` | **Passed (API)** |
 | **AC-09** | Permitted Ticket Status Transition to Resolved | `API-08`, `UI-03`, `E2E-02` |
 | **AC-10** | Illegal Ticket Status Transition Rejection | `UNIT-01`, `API-09`, `UI-03` |
 | **AC-11** | Advisory Requester Resolution Indication | `API-10`, `E2E-02` |
