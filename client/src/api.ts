@@ -828,3 +828,99 @@ export async function updateActionTaken(actionId: number, payload: UpdateActionT
   return data;
 }
 
+// ---------------------------------------------------------------------------
+// Lab 4 — Role Dashboards Interfaces & API Methods
+// ---------------------------------------------------------------------------
+
+export interface RequesterDashboardMetrics {
+  myOpenTickets: number;
+  inProgressTickets: number;
+  waitingForRequesterTickets: number;
+  recentlyResolvedTickets: number;
+}
+
+export interface RequesterDashboardRecentTicket {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  status: string;
+  itPriority: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RequesterDashboardData {
+  metrics: RequesterDashboardMetrics;
+  recentTickets: RequesterDashboardRecentTicket[];
+}
+
+export interface StaffDashboardMetrics {
+  unassignedTickets: number;
+  myAssignedTickets: number;
+  newTickets: number;
+  openTickets: number;
+  inProgressTickets: number;
+  waitingRequesterTickets: number;
+  urgentTickets: number;
+  adminUserStats?: {
+    totalUsers: number;
+    activeUsers: number;
+    inactiveUsers: number;
+  };
+}
+
+export interface StaffDashboardRecentUrgentTicket {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  status: string;
+  itPriority: string;
+  assignedTo?: {
+    id: number;
+    name: string;
+  } | null;
+  requester?: {
+    id: number;
+    name: string;
+  } | null;
+  updatedAt: string;
+}
+
+export interface StaffDashboardData {
+  metrics: StaffDashboardMetrics;
+  recentUrgentTickets: StaffDashboardRecentUrgentTicket[];
+}
+
+export async function getRequesterDashboard(): Promise<RequesterDashboardData> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/dashboards/requester`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to retrieve Requester dashboard data.");
+  }
+  return data;
+}
+
+export async function getStaffDashboard(): Promise<StaffDashboardData> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/dashboards/staff`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const error: any = new Error(data.message || data.error || "Failed to retrieve Staff dashboard data.");
+    error.status = res.status;
+    throw error;
+  }
+  return data;
+}
+
+
