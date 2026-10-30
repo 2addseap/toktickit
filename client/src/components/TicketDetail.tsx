@@ -7,9 +7,11 @@ import {
   indicateTicketResolution,
   getPublicComments,
   postPublicComment,
+  getActionsTaken,
   Ticket,
   Attachment,
   TicketComment,
+  ActionTaken,
 } from "../api.js";
 import { useRequester } from "../context/RequesterContext.js";
 
@@ -48,6 +50,9 @@ export default function TicketDetail({ ticketId, onBack }: TicketDetailProps) {
   const [removalError, setRemovalError] = useState<string>("");
   const [confirmingRemoval, setConfirmingRemoval] = useState<boolean>(false);
 
+  // Lab 4 — Actions Taken (read-only for Requesters)
+  const [actionsTaken, setActionsTaken] = useState<ActionTaken[]>([]);
+
   // Load ticket details
   const fetchDetail = useCallback(async () => {
     if (!currentRequester) return;
@@ -63,6 +68,12 @@ export default function TicketDetail({ ticketId, onBack }: TicketDetailProps) {
         setComments(comms);
       } catch {
         // Safe fallback if comments endpoint is not mocked or available
+      }
+      try {
+        const acts = await getActionsTaken(ticketId);
+        setActionsTaken(acts);
+      } catch {
+        // Safe fallback — actions may not exist yet
       }
     } catch (err) {
       console.error("Failed to load ticket detail:", err);
@@ -467,6 +478,51 @@ export default function TicketDetail({ ticketId, onBack }: TicketDetailProps) {
                 </div>
               );
             })}
+          </div>
+        )}
+      </div>
+
+      {/* Lab 4 — Actions Taken Read-Only Section (AC-03, FR-04, UI-02) */}
+      <div className="zen-card p-4 mb-4 card-actions-taken" data-testid="requester-actions-taken-section">
+        <h2 className="h5 fw-bold mb-3" style={{ color: "var(--color-primary-green)" }}>
+          🛠️ Actions Taken by IT Staff
+        </h2>
+        <p className="text-muted small mb-3">
+          These are the technical actions recorded by IT Staff on this ticket. You can view but not modify them.
+        </p>
+        {actionsTaken.length === 0 ? (
+          <div className="p-3 text-center text-muted bg-white rounded border" data-testid="requester-actions-empty">
+            No actions have been recorded on this ticket yet.
+          </div>
+        ) : (
+          <div className="d-flex flex-column gap-3" data-testid="requester-actions-list">
+            {actionsTaken.map((action) => (
+              <div key={action.id} className="p-3 item-action-taken" data-testid={`requester-action-item-${action.id}`}>
+                <div className="d-flex align-items-center gap-2 flex-wrap mb-2">
+                  <span className="small text-muted fw-semibold">📅 {formatDate(action.actionDateTime)}</span>
+                  <span className="small text-muted">by <strong>{action.performedBy.name}</strong></span>
+                  {action.followUpRequired ? (
+                    <span className="badge-follow-up-needed">⚠️ Follow-up Needed</span>
+                  ) : (
+                    <span className="badge-follow-up-none">No Follow-up</span>
+                  )}
+                </div>
+                <div className="mb-1">
+                  <span className="small fw-semibold text-muted text-uppercase" style={{ fontSize: "0.72rem" }}>Description</span>
+                  <div className="small text-break" style={{ whiteSpace: "pre-wrap" }}>{action.actionDescription}</div>
+                </div>
+                <div className="mb-1">
+                  <span className="small fw-semibold text-muted text-uppercase" style={{ fontSize: "0.72rem" }}>Result</span>
+                  <div className="small text-break" style={{ whiteSpace: "pre-wrap" }}>{action.result}</div>
+                </div>
+                {action.attachmentNotes && (
+                  <div className="mt-1">
+                    <span className="small fw-semibold text-muted text-uppercase" style={{ fontSize: "0.72rem" }}>Attachment Notes: </span>
+                    <span className="small fst-italic text-muted">{action.attachmentNotes}</span>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>

@@ -10,10 +10,14 @@ import {
   getInternalNotes,
   postInternalNote,
   downloadAttachment,
+  getActionsTaken,
+  createActionTaken,
+  updateActionTaken,
   Ticket,
   TicketComment,
   StaffAssignee,
   Attachment,
+  ActionTaken,
 } from "../api.js";
 import { useAuth } from "../context/AuthContext.js";
 
@@ -66,6 +70,23 @@ export default function StaffTicketDetail({ ticketId, onBack }: StaffTicketDetai
   const [commentError, setCommentError] = useState<string | null>(null);
   const [noteError, setNoteError] = useState<string | null>(null);
 
+  // Lab 4 — Actions Taken state
+  const [actionsTaken, setActionsTaken] = useState<ActionTaken[]>([]);
+  const [actionsLoading, setActionsLoading] = useState<boolean>(false);
+  const [actionFormOpen, setActionFormOpen] = useState<boolean>(false);
+  const [editingAction, setEditingAction] = useState<ActionTaken | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSubmitting, setActionSubmitting] = useState<boolean>(false);
+
+  // Action form field state
+  const [actionDateTime, setActionDateTime] = useState<string>("");
+  const [actionDescription, setActionDescription] = useState<string>("");
+  const [actionResult, setActionResult] = useState<string>("");
+  const [followUpRequired, setFollowUpRequired] = useState<boolean>(false);
+  const [followUpNote, setFollowUpNote] = useState<string>("");
+  const [attachmentNotes, setAttachmentNotes] = useState<string>("");
+  const [actionFieldErrors, setActionFieldErrors] = useState<Record<string, string>>({});
+
   // Load ticket details and associated data
   const loadTicketData = useCallback(async () => {
     setLoading(true);
@@ -96,11 +117,25 @@ export default function StaffTicketDetail({ ticketId, onBack }: StaffTicketDetai
     }
   }, [ticketId]);
 
+  // Load Actions Taken
+  const loadActionsTaken = useCallback(async () => {
+    setActionsLoading(true);
+    try {
+      const actions = await getActionsTaken(ticketId);
+      setActionsTaken(actions);
+    } catch {
+      // Non-fatal — actions may not exist yet
+    } finally {
+      setActionsLoading(false);
+    }
+  }, [ticketId]);
+
   useEffect(() => {
     loadTicketData();
-  }, [loadTicketData]);
+    loadActionsTaken();
+  }, [loadTicketData, loadActionsTaken]);
 
-  // Handle Status Update
+  // Handle Status Update (with optimistic concurrency — AC-08, FR-09)
   async function handleUpdateStatus(e: React.FormEvent) {
     e.preventDefault();
     if (!ticket || !selectedStatus || selectedStatus === ticket.status) return;
@@ -108,16 +143,16 @@ export default function StaffTicketDetail({ ticketId, onBack }: StaffTicketDetai
     setStatusUpdating(true);
     setStatusFeedback(null);
     try {
-      const updated = await updateTicketStatus(ticket.id, selectedStatus);
-      setTicket((prev) => (prev ? { ...prev, status: updated.status } : null));
+      const updated = await updateTicketStatus(ticket.id, selectedStatus, ticket.updatedAt);
+      setTicket((prev) => (prev ? { ...prev, status: updated.status, updatedAt: updated.updatedAt } : null));
       const nextTransitions = STATUS_TRANSITIONS[updated.status] || [];
       setSelectedStatus(nextTransitions[0] || updated.status);
       setStatusFeedback({ type: "success", text: `Status successfully updated to "${updated.status}".` });
-    } catch (err) {
-      setStatusFeedback({
-        type: "error",
-        text: err instanceof Error ? err.message : "Failed to update status.",
-      });
+    } catch (err: any) {
+      const msg = err?.code === "CONCURRENT_UPDATE_CONFLICT"
+        ? "This ticket was updated by another user. Please refresh and review before retrying."
+        : err instanceof Error ? err.message : "Failed to update status.";
+      setStatusFeedback({ type: "error", text: msg });
     } finally {
       setStatusUpdating(false);
     }
@@ -182,6 +217,99 @@ export default function StaffTicketDetail({ ticketId, onBack }: StaffTicketDetai
   function handleClaimForMyself() {
     if (!currentUser) return;
     handleReassign(currentUser.id);
+  }
+
+  // --- Lab 4: Actions Taken Handlers ---
+
+  function openAddActionForm() {
+    setEditingAction(null);
+    setActionDateTime(new Date().toISOString().slice(0, 16));
+    setActionDescription("");
+    setActionResult("");
+    setFollowUpRequired(false);
+    setFollowUpNote("");
+    setAttachmentNotes("");
+    setActionFieldErrors({});
+    setActionError(null);
+    setActionFormOpen(true);
+  }
+
+  function openEditActionForm(action: ActionTaken) {
+    setEditingAction(action);
+    setActionDateTime(action.actionDateTime.slice(0, 16));
+    setActionDescription(action.actionDescription);
+    setActionResult(action.result);
+    setFollowUpRequired(action.followUpRequired);
+    setFollowUpNote(action.followUpNote || "");
+    setAttachmentNotes(action.attachmentNotes || "");
+    setActionFieldErrors({});
+    setActionError(null);
+    setActionFormOpen(true);
+  }
+
+  function closeActionForm() {
+    setActionFormOpen(false);
+    setEditingAction(null);
+    setActionError(null);
+    setActionFieldErrors({});
+  }
+
+  async function handleSubmitAction(e: React.FormEvent) {
+    e.preventDefault();
+
+    // Client-side validation
+    const errors: Record<string, string> = {};
+    if (!actionDescription.trim() || actionDescription.trim().length < 3)
+      errors.actionDescription = "Action description must be at least 3 characters.";
+    if (!actionResult.trim() || actionResult.trim().length < 3)
+      errors.actionResult = "Result must be at least 3 characters.";
+    if (followUpRequired && !followUpNote.trim())
+      errors.followUpNote = "Follow-up note is required when follow-up is needed.";
+
+    if (Object.keys(errors).length > 0) {
+      setActionFieldErrors(errors);
+      return;
+    }
+
+    setActionSubmitting(true);
+    setActionError(null);
+    setActionFieldErrors({});
+
+    try {
+      if (editingAction) {
+        const updated = await updateActionTaken(editingAction.id, {
+          actionDescription: actionDescription.trim(),
+          result: actionResult.trim(),
+          actionDateTime: new Date(actionDateTime).toISOString(),
+          followUpRequired,
+          followUpNote: followUpRequired ? followUpNote.trim() : null,
+          attachmentNotes: attachmentNotes.trim() || null,
+          clientUpdatedAt: editingAction.updatedAt,
+        });
+        setActionsTaken((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+      } else {
+        const created = await createActionTaken(ticketId, {
+          actionDescription: actionDescription.trim(),
+          result: actionResult.trim(),
+          actionDateTime: new Date(actionDateTime).toISOString(),
+          followUpRequired,
+          followUpNote: followUpRequired ? followUpNote.trim() : null,
+          attachmentNotes: attachmentNotes.trim() || null,
+        });
+        setActionsTaken((prev) => [...prev, created]);
+      }
+      closeActionForm();
+    } catch (err: any) {
+      if (err?.code === "CONCURRENT_UPDATE_CONFLICT") {
+        setActionError("This action was updated by someone else. Refresh to see the latest version before editing.");
+      } else if (err?.fieldErrors) {
+        setActionFieldErrors(err.fieldErrors);
+      } else {
+        setActionError(err instanceof Error ? err.message : "Failed to save action.");
+      }
+    } finally {
+      setActionSubmitting(false);
+    }
   }
 
   // Handle Public Comment Submission
@@ -690,6 +818,241 @@ export default function StaffTicketDetail({ ticketId, onBack }: StaffTicketDetai
             </div>
           )}
         </div>
+      </div>
+
+      {/* Lab 4 — Actions Taken Module (AC-01..AC-08, FR-01..FR-05, UI-01) */}
+      <div className="zen-card p-4 mb-4 card-actions-taken" data-testid="actions-taken-section">
+        <div className="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom" style={{ borderColor: "#86EFAC" }}>
+          <div>
+            <h2 className="h5 fw-bold mb-0" style={{ color: "var(--color-primary-green)" }}>🛠️ Actions Taken</h2>
+            <span className="text-muted small">
+              {actionsLoading ? "Loading..." : `${actionsTaken.length} action${actionsTaken.length !== 1 ? "s" : ""} recorded`}
+            </span>
+          </div>
+          {!actionFormOpen && (
+            <button
+              type="button"
+              className="btn btn-sm btn-zen-primary d-inline-flex align-items-center gap-1"
+              onClick={openAddActionForm}
+              data-testid="add-action-btn"
+            >
+              <span>➕</span>
+              <span>Add Action Taken</span>
+            </button>
+          )}
+        </div>
+
+        {/* Add / Edit Action Form */}
+        {actionFormOpen && (
+          <div className="p-3 mb-4 rounded border bg-white" data-testid="action-form">
+            <h3 className="h6 fw-bold mb-3" style={{ color: "var(--color-primary-green)" }}>
+              {editingAction ? "✏️ Edit Action Taken" : "➕ New Action Taken"}
+            </h3>
+
+            {actionError && (
+              <div className="alert alert-danger p-2 small mb-3" role="alert" data-testid="action-form-error">
+                {actionError}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitAction}>
+              <div className="row g-3">
+                <div className="col-12 col-md-6">
+                  <label htmlFor="action-datetime" className="form-label fw-semibold small">
+                    Action Date/Time <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    id="action-datetime"
+                    type="datetime-local"
+                    className="form-control form-control-sm"
+                    value={actionDateTime}
+                    onChange={(e) => setActionDateTime(e.target.value)}
+                    disabled={actionSubmitting}
+                    data-testid="action-datetime-input"
+                  />
+                </div>
+
+                <div className="col-12">
+                  <label htmlFor="action-description" className="form-label fw-semibold small">
+                    Action Description <span className="text-danger">*</span>
+                  </label>
+                  <textarea
+                    id="action-description"
+                    className={`form-control form-control-sm ${actionFieldErrors.actionDescription ? "is-invalid" : ""}`}
+                    rows={3}
+                    placeholder="Describe the diagnostic step, repair, or test performed..."
+                    value={actionDescription}
+                    onChange={(e) => setActionDescription(e.target.value)}
+                    disabled={actionSubmitting}
+                    data-testid="action-description-input"
+                  />
+                  {actionFieldErrors.actionDescription && (
+                    <div className="invalid-feedback" data-testid="action-description-error">{actionFieldErrors.actionDescription}</div>
+                  )}
+                </div>
+
+                <div className="col-12">
+                  <label htmlFor="action-result" className="form-label fw-semibold small">
+                    Result <span className="text-danger">*</span>
+                  </label>
+                  <textarea
+                    id="action-result"
+                    className={`form-control form-control-sm ${actionFieldErrors.actionResult ? "is-invalid" : ""}`}
+                    rows={2}
+                    placeholder="What was the technical outcome of this action?"
+                    value={actionResult}
+                    onChange={(e) => setActionResult(e.target.value)}
+                    disabled={actionSubmitting}
+                    data-testid="action-result-input"
+                  />
+                  {actionFieldErrors.actionResult && (
+                    <div className="invalid-feedback" data-testid="action-result-error">{actionFieldErrors.actionResult}</div>
+                  )}
+                </div>
+
+                <div className="col-12">
+                  <div className="form-check">
+                    <input
+                      id="follow-up-required"
+                      type="checkbox"
+                      className="form-check-input"
+                      checked={followUpRequired}
+                      onChange={(e) => setFollowUpRequired(e.target.checked)}
+                      disabled={actionSubmitting}
+                      data-testid="follow-up-required-checkbox"
+                    />
+                    <label htmlFor="follow-up-required" className="form-check-label fw-semibold small">
+                      Follow-Up Required
+                    </label>
+                  </div>
+                </div>
+
+                {followUpRequired && (
+                  <div className="col-12">
+                    <label htmlFor="follow-up-note" className="form-label fw-semibold small">
+                      Follow-Up Note <span className="text-danger">*</span>
+                    </label>
+                    <textarea
+                      id="follow-up-note"
+                      className={`form-control form-control-sm ${actionFieldErrors.followUpNote ? "is-invalid" : ""}`}
+                      rows={2}
+                      placeholder="Describe the follow-up action needed..."
+                      value={followUpNote}
+                      onChange={(e) => setFollowUpNote(e.target.value)}
+                      disabled={actionSubmitting}
+                      data-testid="follow-up-note-input"
+                    />
+                    {actionFieldErrors.followUpNote && (
+                      <div className="invalid-feedback" data-testid="follow-up-note-error">{actionFieldErrors.followUpNote}</div>
+                    )}
+                  </div>
+                )}
+
+                <div className="col-12">
+                  <label htmlFor="attachment-notes" className="form-label fw-semibold small">Attachment Notes (optional)</label>
+                  <input
+                    id="attachment-notes"
+                    type="text"
+                    className="form-control form-control-sm"
+                    placeholder="Reference log file names, screenshot filenames, or cable labels"
+                    value={attachmentNotes}
+                    onChange={(e) => setAttachmentNotes(e.target.value)}
+                    disabled={actionSubmitting}
+                    data-testid="attachment-notes-input"
+                  />
+                </div>
+
+                <div className="col-12 d-flex gap-2">
+                  <button
+                    type="submit"
+                    className="btn btn-sm btn-zen-primary px-4"
+                    disabled={actionSubmitting}
+                    data-testid="save-action-btn"
+                  >
+                    {actionSubmitting ? (
+                      <><span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Saving...</>
+                    ) : "Save Action"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary px-3"
+                    onClick={closeActionForm}
+                    disabled={actionSubmitting}
+                    data-testid="cancel-action-btn"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Actions Taken List */}
+        {actionsLoading ? (
+          <div className="text-center py-3 text-muted small">Loading actions...</div>
+        ) : actionsTaken.length === 0 ? (
+          <div className="p-4 text-center text-muted bg-white rounded border" data-testid="actions-taken-empty">
+            <div className="fs-3 mb-2">🛠️</div>
+            <p className="mb-0 small">No actions taken recorded yet. Use the button above to log the first action.</p>
+          </div>
+        ) : (
+          <div className="d-flex flex-column gap-3" data-testid="actions-taken-list">
+            {actionsTaken.map((action) => (
+              <div key={action.id} className="p-3 item-action-taken" data-testid={`action-item-${action.id}`}>
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-start gap-2 mb-2">
+                  <div className="d-flex align-items-center gap-2 flex-wrap">
+                    <span className="small text-muted fw-semibold">📅 {formatDate(action.actionDateTime)}</span>
+                    <span className="small text-muted">by <strong>{action.performedBy.name}</strong></span>
+                    <span className="badge-role-staff" style={{ fontSize: "0.72rem" }}>
+                      {action.performedBy.role === "ADMINISTRATOR" ? "Admin" : "Staff"}
+                    </span>
+                    {action.followUpRequired ? (
+                      <span className="badge-follow-up-needed" data-testid={`follow-up-badge-${action.id}`}>
+                        ⚠️ Follow-up Needed
+                      </span>
+                    ) : (
+                      <span className="badge-follow-up-none">No Follow-up</span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() => openEditActionForm(action)}
+                    disabled={actionFormOpen}
+                    data-testid={`edit-action-btn-${action.id}`}
+                  >
+                    ✏️ Edit
+                  </button>
+                </div>
+
+                <div className="mb-1">
+                  <span className="small fw-semibold text-muted text-uppercase" style={{ fontSize: "0.72rem" }}>Description</span>
+                  <div className="small text-break" style={{ whiteSpace: "pre-wrap" }}>{action.actionDescription}</div>
+                </div>
+
+                <div className="mb-1">
+                  <span className="small fw-semibold text-muted text-uppercase" style={{ fontSize: "0.72rem" }}>Result</span>
+                  <div className="small text-break" style={{ whiteSpace: "pre-wrap" }}>{action.result}</div>
+                </div>
+
+                {action.followUpRequired && action.followUpNote && (
+                  <div className="p-2 mt-1 rounded" style={{ backgroundColor: "#FEF3C7", border: "1px solid #F59E0B" }}>
+                    <span className="small fw-semibold" style={{ color: "#92400E" }}>Follow-up: </span>
+                    <span className="small" style={{ color: "#92400E" }}>{action.followUpNote}</span>
+                  </div>
+                )}
+
+                {action.attachmentNotes && (
+                  <div className="mt-1">
+                    <span className="small fw-semibold text-muted text-uppercase" style={{ fontSize: "0.72rem" }}>Attachment Notes: </span>
+                    <span className="small fst-italic text-muted">{action.attachmentNotes}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Communication & Collaboration Tabs (AC-08, AC-09, AC-10, BR-17, BR-18, UI-05) */}
