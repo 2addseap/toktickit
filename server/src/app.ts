@@ -1270,8 +1270,8 @@ app.get("/api/staff/assignees", authenticate, requireRole("IT_STAFF", "ADMINISTR
 // Lab 3 — Issue 5: IT Staff Operational Detail, Transitions, Comments & Notes
 // ---------------------------------------------------------------------------
 
-// Status Transition Matrix (BR-16)
-const STATUS_TRANSITION_MATRIX: Record<string, string[]> = {
+// Status Transition Matrix (BR-16, Lab 4 BR-08)
+export const STATUS_TRANSITION_MATRIX: Record<string, string[]> = {
   "New": ["Open", "In Progress", "Cancelled"],
   "Open": ["In Progress", "Waiting for Requester", "Resolved", "Cancelled"],
   "In Progress": ["Waiting for Requester", "Resolved", "Cancelled"],
@@ -1382,14 +1382,27 @@ app.patch("/api/staff/tickets/:id/status", authenticate, requireRole("IT_STAFF",
       return res.status(404).json({ error: "Ticket not found." });
     }
 
-    const { status } = req.body;
+    const { status, clientUpdatedAt } = req.body;
     const allowedNext = STATUS_TRANSITION_MATRIX[ticket.status] || [];
 
     if (!allowedNext.includes(status)) {
       return res.status(400).json({
         error: "Invalid Status Transition",
         message: `Transition from '${ticket.status}' to '${status}' is not permitted.`,
+        allowedTransitions: allowedNext,
       });
+    }
+
+    // Optimistic concurrency check (Lab 4 — AC-08, FR-09)
+    if (clientUpdatedAt) {
+      const clientTime = new Date(clientUpdatedAt);
+      if (!isNaN(clientTime.getTime()) && ticket.updatedAt.getTime() > clientTime.getTime()) {
+        return res.status(409).json({
+          error: "Conflict",
+          code: "CONCURRENT_UPDATE_CONFLICT",
+          message: "This ticket has been updated by another user. Please refresh and review before changing status.",
+        });
+      }
     }
 
     const updated = await prisma.ticket.update({

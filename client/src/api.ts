@@ -620,7 +620,7 @@ export async function updateTicketPriority(ticketId: number, itPriority: string)
   return data;
 }
 
-export async function updateTicketStatus(ticketId: number, status: string): Promise<StaffTicket> {
+export async function updateTicketStatus(ticketId: number, status: string, clientUpdatedAt?: string): Promise<StaffTicket> {
   const token = getToken();
   const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/status`, {
     method: "PATCH",
@@ -628,12 +628,14 @@ export async function updateTicketStatus(ticketId: number, status: string): Prom
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, clientUpdatedAt }),
   });
 
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data.message || data.error || "Failed to update ticket status.");
+    const error: any = new Error(data.message || data.error || "Failed to update ticket status.");
+    error.code = data.code;
+    throw error;
   }
   return data;
 }
@@ -723,6 +725,105 @@ export async function postInternalNote(ticketId: number, body: string): Promise<
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data.message || data.error || "Failed to post internal note.");
+  }
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Lab 4 — Actions Taken Interfaces & API Methods
+// ---------------------------------------------------------------------------
+
+export interface ActionTaken {
+  id: number;
+  ticketId: number;
+  performedById: number;
+  performedBy: {
+    id: number;
+    name: string;
+    email: string;
+    role: "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
+  };
+  actionDateTime: string;
+  actionDescription: string;
+  result: string;
+  followUpRequired: boolean;
+  followUpNote?: string | null;
+  attachmentNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateActionTakenPayload {
+  actionDescription: string;
+  result: string;
+  actionDateTime?: string;
+  followUpRequired?: boolean;
+  followUpNote?: string | null;
+  attachmentNotes?: string | null;
+}
+
+export interface UpdateActionTakenPayload {
+  actionDescription?: string;
+  result?: string;
+  actionDateTime?: string;
+  followUpRequired?: boolean;
+  followUpNote?: string | null;
+  attachmentNotes?: string | null;
+  clientUpdatedAt?: string;
+}
+
+export async function getActionsTaken(ticketId: number): Promise<ActionTaken[]> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/actions`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to retrieve Actions Taken.");
+  }
+  return data;
+}
+
+export async function createActionTaken(ticketId: number, payload: CreateActionTakenPayload): Promise<ActionTaken> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/actions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const error: any = new Error(data.message || data.error || "Failed to create Action Taken.");
+    error.fieldErrors = data.fieldErrors;
+    throw error;
+  }
+  return data;
+}
+
+export async function updateActionTaken(actionId: number, payload: UpdateActionTakenPayload): Promise<ActionTaken> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/actions/${actionId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const error: any = new Error(data.message || data.error || "Failed to update Action Taken.");
+    error.code = data.code;
+    error.fieldErrors = data.fieldErrors;
+    throw error;
   }
   return data;
 }
