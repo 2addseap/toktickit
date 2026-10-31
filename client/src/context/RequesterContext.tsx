@@ -1,13 +1,18 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { RequesterUser } from "../api.js";
 
-interface RequesterContextType {
+export interface RequesterContextType {
   currentRequester: RequesterUser | null;
   setCurrentRequester: (user: RequesterUser | null) => void;
   isSelectorOpen: boolean;
   setIsSelectorOpen: (open: boolean) => void;
   openSelector: () => void;
   closeSelector: () => void;
+  isAuthenticated?: boolean;
+  isLoading?: boolean;
+  login?: any;
+  logout?: any;
+  refreshRequester?: any;
 }
 
 const RequesterContext = createContext<RequesterContextType | undefined>(undefined);

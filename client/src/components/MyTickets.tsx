@@ -11,9 +11,10 @@ import { useRequester } from "../context/RequesterContext.js";
 interface MyTicketsProps {
   onCreateTicket?: () => void;
   onSelectTicket?: (ticketId: number) => void;
+  initialStatus?: string;
 }
 
-export default function MyTickets({ onCreateTicket, onSelectTicket }: MyTicketsProps) {
+export default function MyTickets({ onCreateTicket, onSelectTicket, initialStatus }: MyTicketsProps) {
   const { currentRequester } = useRequester();
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -27,7 +28,7 @@ export default function MyTickets({ onCreateTicket, onSelectTicket }: MyTicketsP
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [priority, setPriority] = useState<string>("");
-  const [status, setStatus] = useState<string>("");
+  const [status, setStatus] = useState<string>(initialStatus || "");
   const [sortBy, setSortBy] = useState<string>("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState<number>(1);

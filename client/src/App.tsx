@@ -11,12 +11,16 @@ import ChangePassword from "./components/ChangePassword.js";
 import UserManagement from "./components/UserManagement.js";
 import StaffTicketQueue from "./components/StaffTicketQueue.js";
 import StaffTicketDetail from "./components/StaffTicketDetail.js";
+import RequesterDashboard from "./components/RequesterDashboard.js";
+import StaffDashboard from "./components/StaffDashboard.js";
 
 function MainContent() {
   const { currentUser, isLoading, isAuthenticated } = useAuth();
   const { currentRequester, isSelectorOpen } = useRequester();
-  const [currentTab, setCurrentTab] = useState<"my-tickets" | "create-ticket" | "user-management" | "ticket-queue">("my-tickets");
+  const [currentTab, setCurrentTab] = useState<"dashboard" | "my-tickets" | "create-ticket" | "user-management" | "ticket-queue">("dashboard");
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
+  const [queueFilter, setQueueFilter] = useState<{ status?: string; priority?: string; assignedTo?: string; unassignedOnly?: boolean } | undefined>(undefined);
+  const [myTicketsFilter, setMyTicketsFilter] = useState<string | undefined>(undefined);
 
   // Reset selected ticket if user or requester changes
   useEffect(() => {
@@ -55,6 +59,8 @@ function MainContent() {
         currentTab={currentTab}
         onTabChange={(tab) => {
           setSelectedTicketId(null);
+          setQueueFilter(undefined);
+          setMyTicketsFilter(undefined);
           setCurrentTab(tab);
         }}
       />
@@ -74,10 +80,40 @@ function MainContent() {
           )
         ) : (
           <>
+            {currentTab === "dashboard" && (
+              currentUser?.role === "IT_STAFF" || currentUser?.role === "ADMINISTRATOR" ? (
+                <StaffDashboard
+                  onSelectTicket={(ticketId) => setSelectedTicketId(ticketId)}
+                  onNavigateToQueue={(filter) => {
+                    const queueOpts = filter ? {
+                      status: filter.status,
+                      priority: filter.itPriority,
+                      assignedTo: filter.assignedTo,
+                      unassignedOnly: filter.assignedTo === "unassigned",
+                    } : undefined;
+                    setQueueFilter(queueOpts);
+                    setCurrentTab("ticket-queue");
+                  }}
+                  onCreateTicket={() => setCurrentTab("create-ticket")}
+                  onNavigateToUserManagement={() => setCurrentTab("user-management")}
+                />
+              ) : (
+                <RequesterDashboard
+                  onCreateTicket={() => setCurrentTab("create-ticket")}
+                  onSelectTicket={(ticketId) => setSelectedTicketId(ticketId)}
+                  onViewAllTickets={(filter) => {
+                    setMyTicketsFilter(filter);
+                    setCurrentTab("my-tickets");
+                  }}
+                />
+              )
+            )}
+
             {currentTab === "my-tickets" && (
               <MyTickets
                 onCreateTicket={() => setCurrentTab("create-ticket")}
                 onSelectTicket={(ticketId) => setSelectedTicketId(ticketId)}
+                initialStatus={myTicketsFilter}
               />
             )}
 
@@ -93,6 +129,7 @@ function MainContent() {
             {currentTab === "ticket-queue" && (currentUser?.role === "IT_STAFF" || currentUser?.role === "ADMINISTRATOR") && (
               <StaffTicketQueue
                 onSelectTicket={(ticketId) => setSelectedTicketId(ticketId)}
+                initialFilter={queueFilter}
               />
             )}
 

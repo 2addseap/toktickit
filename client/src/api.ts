@@ -489,9 +489,9 @@ export interface StaffTicket {
   summary: string;
   description: string;
   requestedPriority: string;
-  itPriority: string;
+  itPriority?: string | null;
   status: string;
-  resolvedIndicated: boolean;
+  resolvedIndicated?: boolean;
   resolvedIndicatedAt?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -501,10 +501,11 @@ export interface StaffTicket {
     email: string;
     department?: string | null;
   };
+  assignedToId?: number | null;
   assignedTo?: StaffAssignee | null;
   category?: Category;
   relatedSystem?: RelatedSystem;
-  attachmentCount: number;
+  attachmentCount?: number;
 }
 
 export interface PaginatedStaffTickets {
@@ -620,7 +621,7 @@ export async function updateTicketPriority(ticketId: number, itPriority: string)
   return data;
 }
 
-export async function updateTicketStatus(ticketId: number, status: string): Promise<StaffTicket> {
+export async function updateTicketStatus(ticketId: number, status: string, clientUpdatedAt?: string): Promise<StaffTicket> {
   const token = getToken();
   const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/status`, {
     method: "PATCH",
@@ -628,12 +629,14 @@ export async function updateTicketStatus(ticketId: number, status: string): Prom
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, clientUpdatedAt }),
   });
 
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data.message || data.error || "Failed to update ticket status.");
+    const error: any = new Error(data.message || data.error || "Failed to update ticket status.");
+    error.code = data.code;
+    throw error;
   }
   return data;
 }
@@ -726,4 +729,199 @@ export async function postInternalNote(ticketId: number, body: string): Promise<
   }
   return data;
 }
+
+// ---------------------------------------------------------------------------
+// Lab 4 — Actions Taken Interfaces & API Methods
+// ---------------------------------------------------------------------------
+
+export interface ActionTaken {
+  id: number;
+  ticketId: number;
+  performedById: number;
+  performedBy: {
+    id: number;
+    name: string;
+    email: string;
+    role: "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
+  };
+  actionDateTime: string;
+  actionDescription: string;
+  result: string;
+  followUpRequired: boolean;
+  followUpNote?: string | null;
+  attachmentNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateActionTakenPayload {
+  actionDescription: string;
+  result: string;
+  actionDateTime?: string;
+  followUpRequired?: boolean;
+  followUpNote?: string | null;
+  attachmentNotes?: string | null;
+}
+
+export interface UpdateActionTakenPayload {
+  actionDescription?: string;
+  result?: string;
+  actionDateTime?: string;
+  followUpRequired?: boolean;
+  followUpNote?: string | null;
+  attachmentNotes?: string | null;
+  clientUpdatedAt?: string;
+}
+
+export async function getActionsTaken(ticketId: number): Promise<ActionTaken[]> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/actions`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to retrieve Actions Taken.");
+  }
+  return data;
+}
+
+export async function createActionTaken(ticketId: number, payload: CreateActionTakenPayload): Promise<ActionTaken> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/actions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const error: any = new Error(data.message || data.error || "Failed to create Action Taken.");
+    error.fieldErrors = data.fieldErrors;
+    throw error;
+  }
+  return data;
+}
+
+export async function updateActionTaken(actionId: number, payload: UpdateActionTakenPayload): Promise<ActionTaken> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/actions/${actionId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const error: any = new Error(data.message || data.error || "Failed to update Action Taken.");
+    error.code = data.code;
+    error.fieldErrors = data.fieldErrors;
+    throw error;
+  }
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Lab 4 — Role Dashboards Interfaces & API Methods
+// ---------------------------------------------------------------------------
+
+export interface RequesterDashboardMetrics {
+  myOpenTickets: number;
+  inProgressTickets: number;
+  waitingForRequesterTickets: number;
+  recentlyResolvedTickets: number;
+}
+
+export interface RequesterDashboardRecentTicket {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  status: string;
+  itPriority: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RequesterDashboardData {
+  metrics: RequesterDashboardMetrics;
+  recentTickets: RequesterDashboardRecentTicket[];
+}
+
+export interface StaffDashboardMetrics {
+  unassignedTickets: number;
+  myAssignedTickets: number;
+  newTickets: number;
+  openTickets: number;
+  inProgressTickets: number;
+  waitingRequesterTickets: number;
+  urgentTickets: number;
+  adminUserStats?: {
+    totalUsers: number;
+    activeUsers: number;
+    inactiveUsers: number;
+  };
+}
+
+export interface StaffDashboardRecentUrgentTicket {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  status: string;
+  itPriority: string;
+  assignedTo?: {
+    id: number;
+    name: string;
+  } | null;
+  requester?: {
+    id: number;
+    name: string;
+  } | null;
+  updatedAt: string;
+}
+
+export interface StaffDashboardData {
+  metrics: StaffDashboardMetrics;
+  recentUrgentTickets: StaffDashboardRecentUrgentTicket[];
+}
+
+export async function getRequesterDashboard(): Promise<RequesterDashboardData> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/dashboards/requester`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to retrieve Requester dashboard data.");
+  }
+  return data;
+}
+
+export async function getStaffDashboard(): Promise<StaffDashboardData> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/api/dashboards/staff`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const error: any = new Error(data.message || data.error || "Failed to retrieve Staff dashboard data.");
+    error.status = res.status;
+    throw error;
+  }
+  return data;
+}
+
 
