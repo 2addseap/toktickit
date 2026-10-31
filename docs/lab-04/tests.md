@@ -41,7 +41,7 @@ To guarantee the reliability, security, and regression resilience of Lab 4, test
 | **E2E-01** | E2E | AC-01, AC-06 | Actions Taken multi-staff flow | Staff A claims, Staff B logs action, verify timeline displays both | `e2e/lab-04/actions-taken-flow.spec.ts` | Planned |
 | **E2E-02** | E2E | AC-09, AC-11 | Ticket resolution & lifecycle flow | Requester indicates resolution; staff formally transitions to Resolved | `e2e/lab-04/ticket-resolution.spec.ts` | Planned |
 | **E2E-03** | E2E | AC-12, AC-14 | Role dashboard and drill-down navigation | Verify dashboard KPI cards update after tickets are created/updated | `e2e/lab-04/dashboards.spec.ts` | Planned |
-| **REG-01** | Regression| AC-19 | Labs 1-3 full regression suite | All previous unit, API, UI, and auth test suites pass with 0 errors | `server/tests/` & `client/tests/` | Planned |
+| **REG-01** | Regression| AC-19 | Labs 1-3 full regression suite | All previous unit, API, UI, and auth test suites pass with 0 errors | `server/tests/` & `client/tests/` | **Passed** |
 
 ---
 
@@ -67,4 +67,4 @@ To guarantee the reliability, security, and regression resilience of Lab 4, test
 | **AC-16** | Administrator Dashboard Access & User Stats | `API-16` | **Passed (API, UI)** |
 | **AC-17** | Dashboard Drill-Down Integrity | `UI-05`, `E2E-03` | **Passed (UI)** |
 | **AC-18** | Responsive Design Compliance across Breakpoints | `UI-04`, `UI-05`, Visual Inspection |
-| **AC-19** | Full Regression of Labs 1-3 Features | `REG-01` |
+| **AC-19** | Full Regression of Labs 1-3 Features | `REG-01` | **Passed (Full Suite)** |
