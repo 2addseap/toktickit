@@ -11,9 +11,15 @@ import {
 
 interface StaffTicketQueueProps {
   onSelectTicket?: (ticketId: number) => void;
+  initialFilter?: {
+    status?: string;
+    priority?: string;
+    assignedTo?: string;
+    unassignedOnly?: boolean;
+  };
 }
 
-export default function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
+export default function StaffTicketQueue({ onSelectTicket, initialFilter }: StaffTicketQueueProps) {
   const [tickets, setTickets] = useState<StaffTicket[]>([]);
   const [pagination, setPagination] = useState<PaginationMetadata>({
     page: 1,
@@ -31,11 +37,11 @@ export default function StaffTicketQueue({ onSelectTicket }: StaffTicketQueuePro
 
   // Filters State
   const [search, setSearch] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [priorityFilter, setPriorityFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>(initialFilter?.status || "");
+  const [priorityFilter, setPriorityFilter] = useState<string>(initialFilter?.priority || "");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
-  const [assignedToFilter, setAssignedToFilter] = useState<string>("");
-  const [unassignedOnly, setUnassignedOnly] = useState<boolean>(false);
+  const [assignedToFilter, setAssignedToFilter] = useState<string>(initialFilter?.assignedTo || "");
+  const [unassignedOnly, setUnassignedOnly] = useState<boolean>(initialFilter?.unassignedOnly || false);
 
   // Sorting State
   const [sortBy, setSortBy] = useState<"createdAt" | "ticketNumber" | "itPriority" | "status" | "updatedAt">("createdAt");
