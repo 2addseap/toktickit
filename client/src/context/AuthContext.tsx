@@ -1,14 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { User, getToken, clearToken, login as apiLogin, logout as apiLogout, getMe, changePassword as apiChangePassword } from "../api.js";
 
-interface AuthContextType {
+export interface AuthContextType {
   currentUser: User | null;
-  token: string | null;
+  token?: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string, confirmPassword: string) => Promise<void>;
+  refreshUser?: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

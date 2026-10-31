@@ -59,6 +59,11 @@ describe("Lab 4 — UI-02: Actions Taken Read-Only View for Requester", () => {
     vi.restoreAllMocks();
     vi.spyOn(requesterContext, "useRequester").mockReturnValue({
       currentRequester: mockRequester,
+      setCurrentRequester: vi.fn(),
+      isSelectorOpen: false,
+      setIsSelectorOpen: vi.fn(),
+      openSelector: vi.fn(),
+      closeSelector: vi.fn(),
       isAuthenticated: true,
       isLoading: false,
       login: vi.fn(),

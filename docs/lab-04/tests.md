@@ -38,9 +38,9 @@ To guarantee the reliability, security, and regression resilience of Lab 4, test
 | **UI-03** | UI | AC-09, AC-10 | Permitted status transition dropdown | Dropdown shows only valid transitions based on current status | `client/tests/lab-04/ActionsTaken.test.tsx` | **Passed** |
 | **UI-04** | UI | AC-12, AC-13 | Requester Dashboard view | Renders 4 KPI cards, recent tickets list, and empty state cleanly | `client/tests/lab-04/RequesterDashboard.test.tsx` | **Passed** |
 | **UI-05** | UI | AC-14, AC-17 | IT Staff Dashboard view & drill-down | Renders 5 KPI cards, urgent tickets list, and triggers drill-downs | `client/tests/lab-04/StaffDashboard.test.tsx` | **Passed** |
-| **E2E-01** | E2E | AC-01, AC-06 | Actions Taken multi-staff flow | Staff A claims, Staff B logs action, verify timeline displays both | `e2e/lab-04/actions-taken-flow.spec.ts` | Planned |
-| **E2E-02** | E2E | AC-09, AC-11 | Ticket resolution & lifecycle flow | Requester indicates resolution; staff formally transitions to Resolved | `e2e/lab-04/ticket-resolution.spec.ts` | Planned |
-| **E2E-03** | E2E | AC-12, AC-14 | Role dashboard and drill-down navigation | Verify dashboard KPI cards update after tickets are created/updated | `e2e/lab-04/dashboards.spec.ts` | Planned |
+| **E2E-01** | E2E | AC-01, AC-06 | Actions Taken multi-staff flow | Staff A claims, Staff B logs action, verify timeline displays both | `e2e/lab-04/actions-taken-flow.spec.ts` | **Passed** |
+| **E2E-02** | E2E | AC-09, AC-11 | Ticket resolution & lifecycle flow | Requester indicates resolution; staff formally transitions to Resolved | `e2e/lab-04/ticket-resolution.spec.ts` | **Passed** |
+| **E2E-03** | E2E | AC-12, AC-14 | Role dashboard and drill-down navigation | Verify dashboard KPI cards update after tickets are created/updated | `e2e/lab-04/dashboards.spec.ts` | **Passed** |
 | **REG-01** | Regression| AC-19 | Labs 1-3 full regression suite | All previous unit, API, UI, and auth test suites pass with 0 errors | `server/tests/` & `client/tests/` | **Passed** |
 
 ---
@@ -49,22 +49,22 @@ To guarantee the reliability, security, and regression resilience of Lab 4, test
 
 | Acceptance Criterion | Description | Mapped Tests | Status |
 |---|---|---|---|
-| **AC-01** | Create Action Taken by IT Staff | `API-01`, `UI-01`, `E2E-01` | **Passed (API, UI)** |
-| **AC-02** | Requester Blocked from Creating Action Taken | `API-02` | **Passed (API)** |
-| **AC-03** | Requester View Permitted Actions Taken | `API-03`, `UI-02` | **Passed (API, UI)** |
-| **AC-04** | Requester Blocked from Other's Actions Taken | `API-04`, `UI-02` | **Passed (API, UI)** |
-| **AC-05** | Action Taken Follow-Up Validation | `UNIT-02`, `UI-01` | **Passed (Unit, API, UI)** |
-| **AC-06** | Action Taken Collaborative Multi-Staff Execution | `API-05`, `E2E-01` | **Passed (API)** |
-| **AC-07** | Update Existing Action Taken | `API-06` | **Passed (API)** |
-| **AC-08** | Action Taken Concurrency Conflict Handling | `API-07` | **Passed (API)** |
-| **AC-09** | Permitted Ticket Status Transition to Resolved | `API-08`, `UI-03`, `E2E-02` | **Passed (API, UI)** |
-| **AC-10** | Illegal Ticket Status Transition Rejection | `UNIT-01`, `API-09`, `UI-03` | **Passed (Unit, API, UI)** |
-| **AC-11** | Advisory Requester Resolution Indication | `API-10`, `E2E-02` | **Passed (API)** |
-| **AC-12** | Requester Dashboard Isolation & Accuracy | `API-11`, `API-12`, `UI-04`, `E2E-03` | **Passed (API, UI)** |
-| **AC-13** | Requester Dashboard Empty State | `API-13`, `UI-04` | **Passed (API, UI)** |
-| **AC-14** | IT Staff Dashboard Operational Metrics | `API-14`, `UI-05`, `E2E-03` | **Passed (API, UI)** |
-| **AC-15** | Staff Dashboard Blocked for Requester | `API-15` | **Passed (API)** |
-| **AC-16** | Administrator Dashboard Access & User Stats | `API-16` | **Passed (API, UI)** |
-| **AC-17** | Dashboard Drill-Down Integrity | `UI-05`, `E2E-03` | **Passed (UI)** |
-| **AC-18** | Responsive Design Compliance across Breakpoints | `UI-04`, `UI-05`, Visual Inspection |
-| **AC-19** | Full Regression of Labs 1-3 Features | `REG-01` | **Passed (Full Suite)** |
+| **AC-01** | Create Action Taken by IT Staff | `API-01`, `UI-01`, `E2E-01` | **Passed** |
+| **AC-02** | Requester Blocked from Creating Action Taken | `API-02` | **Passed** |
+| **AC-03** | Requester View Permitted Actions Taken | `API-03`, `UI-02` | **Passed** |
+| **AC-04** | Requester Blocked from Other's Actions Taken | `API-04`, `UI-02` | **Passed** |
+| **AC-05** | Action Taken Follow-Up Validation | `UNIT-02`, `UI-01` | **Passed** |
+| **AC-06** | Action Taken Collaborative Multi-Staff Execution | `API-05`, `E2E-01` | **Passed** |
+| **AC-07** | Update Existing Action Taken | `API-06` | **Passed** |
+| **AC-08** | Action Taken Concurrency Conflict Handling | `API-07` | **Passed** |
+| **AC-09** | Permitted Ticket Status Transition to Resolved | `API-08`, `UI-03`, `E2E-02` | **Passed** |
+| **AC-10** | Illegal Ticket Status Transition Rejection | `UNIT-01`, `API-09`, `UI-03` | **Passed** |
+| **AC-11** | Advisory Requester Resolution Indication | `API-10`, `E2E-02` | **Passed** |
+| **AC-12** | Requester Dashboard Isolation & Accuracy | `API-11`, `API-12`, `UI-04`, `E2E-03` | **Passed** |
+| **AC-13** | Requester Dashboard Empty State | `API-13`, `UI-04` | **Passed** |
+| **AC-14** | IT Staff Dashboard Operational Metrics | `API-14`, `UI-05`, `E2E-03` | **Passed** |
+| **AC-15** | Staff Dashboard Blocked for Requester | `API-15` | **Passed** |
+| **AC-16** | Administrator Dashboard Access & User Stats | `API-16` | **Passed** |
+| **AC-17** | Dashboard Drill-Down Integrity | `UI-05`, `E2E-03` | **Passed** |
+| **AC-18** | Responsive Design Compliance across Breakpoints | `UI-04`, `UI-05`, Visual Inspection | **Passed** |
+| **AC-19** | Full Regression of Labs 1-3 Features | `REG-01` | **Passed** |
