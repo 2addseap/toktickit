@@ -74,6 +74,7 @@ describe("Lab 4 — UI-01: Actions Taken Panel in Staff Ticket Detail", () => {
       isLoading: false,
       login: vi.fn(),
       logout: vi.fn(),
+      changePassword: vi.fn(),
       refreshUser: vi.fn(),
     });
     vi.spyOn(api, "getTicketDetail").mockResolvedValue(mockTicket);
@@ -242,6 +243,7 @@ describe("Lab 4 — UI-03: Permitted Status Transition Dropdown", () => {
       isLoading: false,
       login: vi.fn(),
       logout: vi.fn(),
+      changePassword: vi.fn(),
       refreshUser: vi.fn(),
     });
     vi.spyOn(api, "getStaffAssignees").mockResolvedValue(mockAssignees);

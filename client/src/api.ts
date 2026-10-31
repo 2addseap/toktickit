@@ -489,9 +489,9 @@ export interface StaffTicket {
   summary: string;
   description: string;
   requestedPriority: string;
-  itPriority: string;
+  itPriority?: string | null;
   status: string;
-  resolvedIndicated: boolean;
+  resolvedIndicated?: boolean;
   resolvedIndicatedAt?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -501,10 +501,11 @@ export interface StaffTicket {
     email: string;
     department?: string | null;
   };
+  assignedToId?: number | null;
   assignedTo?: StaffAssignee | null;
   category?: Category;
   relatedSystem?: RelatedSystem;
-  attachmentCount: number;
+  attachmentCount?: number;
 }
 
 export interface PaginatedStaffTickets {

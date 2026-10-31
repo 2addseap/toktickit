@@ -89,6 +89,7 @@ describe("Lab 3 — UI-04 & UI-05: StaffTicketDetail Component Tests", () => {
       isLoading: false,
       login: vi.fn(),
       logout: vi.fn(),
+      changePassword: vi.fn(),
       refreshUser: vi.fn(),
     });
     vi.spyOn(api, "getTicketDetail").mockResolvedValue(mockTicket);

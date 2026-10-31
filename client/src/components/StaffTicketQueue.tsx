@@ -152,8 +152,8 @@ export default function StaffTicketQueue({ onSelectTicket, initialFilter }: Staf
     }
   };
 
-  const renderPriorityBadge = (p: string) => {
-    const priority = p.toUpperCase();
+  const renderPriorityBadge = (p?: string | null) => {
+    const priority = (p || "MEDIUM").toUpperCase();
     switch (priority) {
       case "LOW":
         return <span className="badge-priority-low">LOW</span>;

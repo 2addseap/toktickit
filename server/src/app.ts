@@ -372,7 +372,7 @@ app.post("/api/tickets", handleUpload, async (req: Request, res: Response) => {
         newTicket = await prisma.ticket.create({
           data: {
             ticketNumber,
-            requesterId,
+            requesterId: Number(requesterId),
             categoryId: Number(categoryId),
             relatedSystemId: Number(relatedSystemId),
             requestedPriority: priority,
